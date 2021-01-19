@@ -1,8 +1,10 @@
 package com.desagas.biomeidfixer.mixin;
 
+import com.desagas.biomeidfixer.WriteJSON;
 import com.google.common.collect.BiMap;
 import com.mojang.serialization.Lifecycle;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import java.io.IOException;
 import java.util.Map;
 import java.util.OptionalInt;
 import net.minecraft.util.RegistryKey;
@@ -34,9 +36,9 @@ public final class MixinSimpleRegistry<T> {
             } else {
                 i = this.nextFreeId;
 
-                if (registryKey.getRegistryName().getPath() == "worldgen/biome") {
-                    LOGGER0.info(new StringBuilder().append("Desagas assigned id " + i).append(" to ").append(registryKey.getLocation()));
-                }
+//                if (registryKey.getRegistryName().getPath() == "worldgen/biome") {
+//                    LOGGER0.info(new StringBuilder().append("Desagas assigned id " + i).append(" to ").append(registryKey.getLocation()));
+//                }
             }
         } else {
             i = this.entryIndexMap.getInt(t);
@@ -44,8 +46,14 @@ public final class MixinSimpleRegistry<T> {
                 throw new IllegalStateException("ID mismatch");
             }
 
+            // Send the biome values to be stored.
+
             this.entryIndexMap.removeInt(t);
             this.objectToLifecycleMap.remove(t);
+        }
+
+        if (registryKey.getRegistryName().getPath() == "worldgen/biome") {
+            new com.desagas.biomeidfixer.WriteJSON().getOrTryBiomeAssignment(i, registryKey.getLocation().toString());
         }
 
         callback.setReturnValue(this.register(i, registryKey, value, lifecycle, false));
