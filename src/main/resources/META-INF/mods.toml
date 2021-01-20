@@ -14,7 +14,7 @@ displayURL="https://github.com/desagas/Biome-Id-Fixer" # optional
 credits="Well, the Modded Minecraft discord is a good place is to start ..." # optional
 authors="Desagas" # optional
 description='''
-This mod injects code to make Minecraft retain its biome id's, whether or not biomes are added or removed.
+This mod injects code to make Minecraft retain its biome id's, whether or not biomes are added or removed. Further, if you remove or add a mod with biomes, and decide that you do not like it, you can remove it and all OLD ids will still remain unshuffled.
 ''' # mandatory
 
 #[[dependencies.examplemod]] #optional
