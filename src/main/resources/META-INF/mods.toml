@@ -1,5 +1,5 @@
 modLoader="javafml" # mandatory
-loaderVersion="[35,)" # mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
+loaderVersion="[36,)" # mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
 
 license="All rights reserved" # mandatory
 
@@ -17,22 +17,22 @@ description='''
 This mod injects code to make Minecraft retain its biome id's, whether or not biomes are added or removed. Further, if you remove or add a mod with biomes, and decide that you do not like it, you can remove it and all OLD ids will still remain unshuffled.
 ''' # mandatory
 
-#[[dependencies.examplemod]] #optional
-#    # the modid of the dependency
-#    modId="forge" #mandatory
-#    # Does this dependency have to exist - if not, ordering below must be specified
-#    mandatory=true #mandatory
-#    # The version range of the dependency
-#    versionRange="[35,)" #mandatory
-#    # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
-#    ordering="NONE"
-#    # Side this dependency is applied on - BOTH, CLIENT or SERVER
-#    side="BOTH"
+[[dependencies.biomeidfixer]] # optional
+   # the modid of the dependency
+   modId="forge" # mandatory
+   # Does this dependency have to exist - if not, ordering below must be specified
+   mandatory=true #mandatory
+   # The version range of the dependency
+   versionRange="[36,)" # mandatory
+   # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
+   ordering="NONE"
+   # Side this dependency is applied on - BOTH, CLIENT or SERVER
+   side="BOTH"
 # Here's another dependency
-#[[dependencies.examplemod]]
-#    modId="minecraft"
-#    mandatory=true
-## This version range declares a minimum of the current minecraft version up to but not including the next major version
-#    versionRange="[1.16.4,1.17)"
-#    ordering="NONE"
-#    side="BOTH"
+[[dependencies.biomeidfixer]]
+   modId="minecraft"
+   mandatory=true
+# This version range declares a minimum of the current minecraft version up to but not including the next major version
+   versionRange="[1.16.5,1.17)"
+   ordering="NONE"
+   side="BOTH"
