@@ -7,62 +7,60 @@ import java.io.IOException;
 import java.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
+
+// TODO If Server, Send list of Biomes and Ids to client to register/store/use, NOT to map. This will avoid the deletion during backs.
+// TODO Save config in world folder on both Server and Client worlds.
 
 public class WriteJSON {
-    private static final Logger LOGGER = LogManager.getLogger();
 
-    private int biomeId;
-    private String biomeLocation;
-    private static final Map<Integer, String> biomes = new HashMap<Integer, String>();
-    private static final String masterFile = "config/biomeidfixer.json";
+    protected static final Logger LOGGER = LogManager.getLogger();
 
-    public Object getOrTryBiomeAssignment (int biomeId, String biomeLocation) {
+    protected int biomeId;
+    protected String biomeLocation;
+    protected static final Map<Integer, String> biomes = new HashMap<Integer, String>();
+    protected static final String masterFile = "biomeidfixer(doNOTedit).json";
 
+    public int getOrTryBiomeAssignment (int biomeId, String biomeLocation) {
         this.biomeId = biomeId;
         this.biomeLocation = biomeLocation;
 
-        LOGGER.info(new StringBuilder().append("Desagas: received request for biomeId ").append(biomeId).append(" at ").append(biomeLocation));
+        StringBuilder feedback = new StringBuilder();
+        feedback.append("Desagas: request for biomeId ").append(biomeId).append(" at ").append(biomeLocation);
 
-        if (!masterExists() && !createMaster()) { return null; }
-        biomes.put(-999999, "desagas:demo");
+        if (masterExists() && biomes.isEmpty()) { new ReadJSON().importBiomeMap(); } // !!! IMPORTANT <-- Importing MUST be done before creating master,or invalid int formation exceptions.
+        if (!masterExists() && !createMaster()) { return -1; } // !!! IMPORTANT <-- Will create empty file which CANNOT be parsed to Map<Integer,String>
 
-        int returnId = 0;
-        boolean returnFalse = false;
+        int returnId = -1;
+        boolean updateMaster = false;
 
         switch (canAssignIdtoBiome()) {
             case 0: // Already assigned;
-                LOGGER.info(new StringBuilder().append("Desagas: biomeId ").append(this.biomeId).append(" already assigned at ").append(this.biomeLocation));
-                returnFalse = true;
+                returnId = this.biomeId;
+                feedback.append(" - already assigned.");
                 break;
             case 1: // Not assigned;
-                LOGGER.info(new StringBuilder().append("Desagas: biomeId ").append(this.biomeId).append(" assigned at ").append(this.biomeLocation));
                 returnId = assignId();
+                feedback.append(" - now assigned.");
+                updateMaster = true;
                 break;
             case 2: // Biome assigned, not to the id;
-                LOGGER.info(new StringBuilder().append("Desagas: biomeId ").append(this.biomeId).append(" not assigned at ").append(this.biomeLocation));
-                getOrTryBiomeAssignment(findId(), biomeLocation);
+                returnId = findId();
+                feedback.append(" - not assigned: stored biomeId ").append(returnId).append(" used instead.");
+                break;
             case 3: // Id assigned, not to the biome;
-                LOGGER.info(new StringBuilder().append("Desagas: biomeId ").append(this.biomeId).append(" not assigned at ").append(this.biomeLocation));
-                getOrTryBiomeAssignment(biomeId++, biomeLocation);
+                returnId = getOrTryBiomeAssignment(this.biomeId + 1, this.biomeLocation);
+                feedback.append(" - not assigned: newly registered biome assigned biomeId ").append(returnId);
                 break;
             default:
-                throw new IllegalStateException("Unexpected value: " + canAssignIdtoBiome());
+                throw new IllegalStateException("Desagas: unexpected canAssignIdtoBiome() logic value assigned: " + canAssignIdtoBiome());
         }
 
-        String outputJson = getPrettyJsonString();
-        writeJson(outputJson);
+        LOGGER.debug(feedback);
 
-        return !returnFalse ? returnId : returnFalse;
+        if (updateMaster) { writeJson(getPrettyJsonString()); }
+
+        return returnId;
     }
 
     private int assignId () {
@@ -74,7 +72,8 @@ public class WriteJSON {
         Iterator huntId = biomes.entrySet().iterator();
         while (huntId.hasNext()) {
             Map.Entry pair = (Map.Entry)huntId.next();
-            if (pair.getValue() == this.biomeLocation) { return this.biomeId; }
+            LOGGER.debug("Desagas: checked " + this.biomeLocation + " against " + pair.getValue());
+            if (pair.getValue().equals(this.biomeLocation)) { LOGGER.debug("       : found a match!"); return (int)pair.getKey(); }
         }
         return -1;
     }
@@ -84,25 +83,12 @@ public class WriteJSON {
         JsonParser parseJson = new JsonParser();
         Gson betterGson = new GsonBuilder().setPrettyPrinting().create();
 
-//        // ReOrdering the List
-//        Set<Entry<Integer, String>> entries = biomes.entrySet();
-//        Comparator<Entry<Integer, String>> valueComparator = (e1, e2) -> {
-//            Integer v1 = e1.getKey();
-//            Integer v2 = e2.getKey();
-//            return v1.compareTo(v2);
-//        };
-//        List<Entry<Integer, String>> listOfEntries = new ArrayList<>(entries);
-//        listOfEntries.sort(valueComparator);
-//        LinkedHashMap<Integer, String> sortedByValue = new LinkedHashMap<>(listOfEntries.size());
-//        for(Entry<Integer, String> entry : listOfEntries){ sortedByValue.put(entry.getKey(), entry.getValue()); }
-//        Set<Entry<Integer, String>> entrySetSortedByValue = sortedByValue.entrySet();
-//        for(Entry<Integer, String> mapping : entrySetSortedByValue){ LOGGER.debug(mapping.getKey() + " ==> " + mapping.getValue()); }
-
+        // Map is loaded in order OUTSIDE of the dev environment, but random within.
         String uglyJson = uglyGson.toJson(biomes);
         JsonElement parsedJson = parseJson.parse(uglyJson);
         String betterJson = betterGson.toJson(parsedJson);
 
-        LOGGER.debug(new StringBuilder().append("Desagas:jsonOutput:").append(betterJson));
+        LOGGER.debug(new StringBuilder().append("Desagas: your ").append(masterFile).append(" contains the following:").append(betterJson));
 
         return betterJson;
     }
@@ -117,7 +103,7 @@ public class WriteJSON {
             LOGGER.info("Desagas: created master list of mapped biomes at " + masterFile);
             return true;
         } catch (IOException e) { e.printStackTrace();
-            LOGGER.info("Desagas: could not create master list of mapped biomes.");
+            LOGGER.error("Desagas: could not create master list of mapped biomes.");
             return false;
         }
     }
@@ -139,9 +125,9 @@ public class WriteJSON {
             FileWriter jsonWriter = new FileWriter(masterFile);
             jsonWriter.write(prettyString);
             jsonWriter.flush();
-            LOGGER.info("Desagas: updated master list of mapped biomes.");
+            LOGGER.debug("Desagas: updated master list of mapped biomes.");
         } catch (IOException e) {
-            LOGGER.info("Desagas: could not update master list of mapped biomes.");
+            LOGGER.error("Desagas: could not update master list of mapped biomes.");
             e.printStackTrace();
         }
     }

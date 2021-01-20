@@ -1,10 +1,8 @@
 package com.desagas.biomeidfixer.mixin;
 
-import com.desagas.biomeidfixer.WriteJSON;
 import com.google.common.collect.BiMap;
 import com.mojang.serialization.Lifecycle;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import java.io.IOException;
 import java.util.Map;
 import java.util.OptionalInt;
 import net.minecraft.util.RegistryKey;
@@ -28,36 +26,42 @@ public final class MixinSimpleRegistry<T> {
     public <V extends T> void validateAndRegisterStart(OptionalInt index, RegistryKey<T> registryKey, V value, Lifecycle lifecycle, CallbackInfoReturnable<V> callback) {
         Validate.notNull(registryKey);
         Validate.notNull((T)value);
+
+        boolean biomePath = registryKey.getRegistryName().getPath().equals("worldgen/biome");
+        com.desagas.biomeidfixer.WriteJSON thisBiomeId = new com.desagas.biomeidfixer.WriteJSON();
         T t = this.keyToObjectMap.get(registryKey);
         int i;
         if (t == null) {
             if (index.isPresent()) {
-                i = index.getAsInt();
+                if (biomePath) {
+                    i = thisBiomeId.getOrTryBiomeAssignment(index.getAsInt(), registryKey.getLocation().toString()); // Desagas: use index if available, if not it will find the next int.
+                    LOGGER0.debug("Desagas: biomeId assigned is " + i + " when optional index was " + index + " at " + registryKey.getLocation().toString());
+                } else {
+                    i = index.getAsInt();
+                }
             } else {
-                i = this.nextFreeId;
-
-//                if (registryKey.getRegistryName().getPath() == "worldgen/biome") {
-//                    LOGGER0.info(new StringBuilder().append("Desagas assigned id " + i).append(" to ").append(registryKey.getLocation()));
-//                }
+                if (biomePath) {
+                    i = thisBiomeId.getOrTryBiomeAssignment(this.nextFreeId, registryKey.getLocation().toString()); // Desagas: use this.nextFreeId if available, if not it will find the next.
+                    LOGGER0.debug("Desagas: biomeId assigned is " + i + " when optional index was not defined at " + registryKey.getLocation().toString());
+                } else {
+                    i = this.nextFreeId;
+                }
             }
+
         } else {
             i = this.entryIndexMap.getInt(t);
+            if (biomePath) {
+                LOGGER0.debug("Desagas: biomeId " + i + " already managed for " + registryKey.getLocation().toString());
+            }
             if (index.isPresent() && index.getAsInt() != i) {
                 throw new IllegalStateException("ID mismatch");
             }
-
-            // Send the biome values to be stored.
 
             this.entryIndexMap.removeInt(t);
             this.objectToLifecycleMap.remove(t);
         }
 
-        if (registryKey.getRegistryName().getPath() == "worldgen/biome") {
-            new com.desagas.biomeidfixer.WriteJSON().getOrTryBiomeAssignment(i, registryKey.getLocation().toString());
-        }
-
         callback.setReturnValue(this.register(i, registryKey, value, lifecycle, false));
-
     }
 
     @Shadow @Final protected static Logger LOGGER0;
