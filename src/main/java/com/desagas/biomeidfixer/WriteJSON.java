@@ -36,6 +36,7 @@ public class WriteJSON {
 
         switch (canAssignIdtoBiome()) {
             case 0: // Already assigned;
+                updateMaster = true;
                 returnId = this.biomeId;
                 feedback.append(" - already assigned.");
                 break;
@@ -47,16 +48,18 @@ public class WriteJSON {
             case 2: // Biome assigned, not to the id;
                 returnId = findId();
                 feedback.append(" - not assigned: stored biomeId ").append(returnId).append(" used instead.");
+                updateMaster = true;
                 break;
             case 3: // Id assigned, not to the biome;
                 returnId = getOrTryBiomeAssignment(this.biomeId + 1, this.biomeLocation);
                 feedback.append(" - not assigned: newly registered biome assigned biomeId ").append(returnId);
+                updateMaster = true;
                 break;
             default:
                 throw new IllegalStateException("Desagas: unexpected canAssignIdtoBiome() logic value assigned: " + canAssignIdtoBiome());
         }
 
-        LOGGER.debug(feedback);
+        LOGGER.info(feedback);
 
         if (updateMaster) { writeJson(getPrettyJsonString()); }
 
