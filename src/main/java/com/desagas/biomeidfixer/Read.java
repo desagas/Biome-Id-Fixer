@@ -5,8 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import org.apache.logging.log4j.Logger;
 
-public class ReadJSON extends WriteJSON {
+public class Read extends Write {
 
     private static List<String> thisJsonFile = new ArrayList<>();
     private static String fullJsonString = "";
@@ -18,8 +20,8 @@ public class ReadJSON extends WriteJSON {
             LOGGER.error("Desagas: could not read for import the master list of biomes at " + masterFile);
             e.printStackTrace(); }
 
-        for (String jasonLine : thisJsonFile) {
-            fullJsonString += jasonLine
+        for (String jsonLine : thisJsonFile) {
+            fullJsonString += jsonLine
                     .replace(" ", "")
                     .replace("{", "")
                     .replace("}", "")

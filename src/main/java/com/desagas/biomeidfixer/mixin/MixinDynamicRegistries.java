@@ -44,7 +44,7 @@ public abstract class MixinDynamicRegistries {
                 LOGGER.debug("Desagas broke into the Dynamic Registry to reorganize the biome entries.");
             }
 
-            com.desagas.biomeidfixer.WriteJSON thisBiomeId = new com.desagas.biomeidfixer.WriteJSON(); // Desagas: creates reference to code to fix biome assignment.
+            com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write(); // Desagas: creates reference to code to fix biome assignment.
 
             if (flag) {
                 if (entry.getKey().getRegistryName().getPath().equals("worldgen/biome")) { // Desagas: int id Changed to Master Map or Recorded.

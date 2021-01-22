@@ -28,7 +28,7 @@ public final class MixinSimpleRegistry<T> {
         Validate.notNull((T)value);
 
         boolean biomePath = registryKey.getRegistryName().getPath().equals("worldgen/biome");
-        com.desagas.biomeidfixer.WriteJSON thisBiomeId = new com.desagas.biomeidfixer.WriteJSON();
+        com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write();
         T t = this.keyToObjectMap.get(registryKey);
         int i;
         if (t == null) {
