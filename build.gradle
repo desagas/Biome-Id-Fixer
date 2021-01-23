@@ -16,7 +16,7 @@ apply plugin: 'idea'
 apply plugin: 'maven-publish'
 apply plugin: 'org.spongepowered.mixin'
 
-version = '1.16.4-0.0.0.s2' // Version - Game Breaking.Signigicant Functionality.Better Workings.Mine Fixes
+version = '1.16.4-1.0.0.s1' // Version - Game Breaking.Signigicant Functionality.Better Workings.Mine Fixes
 group = 'com.desagas.biomeidfixer'
 archivesBaseName = 'biomeidfixer'
 

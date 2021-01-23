@@ -14,6 +14,7 @@ public final class MixinWorldSelectionList {
 
     @Inject(at = @At("HEAD"), method = "Lnet/minecraft/client/gui/screen/WorldSelectionList$Entry;func_241653_f_()V", cancellable = true)
     public void func_214444_c(CallbackInfo ci) {
+        // Used to get path to world folder, without changing function of method, sent to Write.
         com.desagas.biomeidfixer.Write.writeTemp(String.valueOf(field_214453_f), false);
     }
 }

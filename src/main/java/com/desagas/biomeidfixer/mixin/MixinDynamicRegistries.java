@@ -15,8 +15,6 @@ import net.minecraft.world.gen.feature.StructureFeature;
 import net.minecraft.world.gen.feature.jigsaw.JigsawPattern;
 import net.minecraft.world.gen.feature.template.IStructureProcessorType;
 import net.minecraft.world.gen.surfacebuilders.ConfiguredSurfaceBuilder;
-import org.apache.logging.log4j.Logger;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -40,23 +38,32 @@ public abstract class MixinDynamicRegistries {
 
         for(Map.Entry<RegistryKey<E>, E> entry : registry.getEntries()) {
             E e = entry.getValue();
-            boolean isBiomeReg = entry.getKey().getRegistryName().getPath().equals("worldgen/biome");
 
-            com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write();
+            // My changes start here. Very small.
+            // Desagas added: if is biome registry below this line, and link to my path for id.
+            //
+            boolean isBiomeReg = entry.getKey().getRegistryName().getPath().equals("worldgen/biome"); // ADD
+
+            com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write(); // ADD
 
             if (flag) {
-                if (isBiomeReg) {
+                if (isBiomeReg) { // ADD
                     registryAccess.encode(registries, entry.getKey(), codecHolder.getRegistryCodec(), thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().getLocation().toString()), e, registry.getLifecycleByRegistry(e));
+                    // MODIFIED
                 } else {
                     registryAccess.encode(registries, entry.getKey(), codecHolder.getRegistryCodec(), registry.getId(e), e, registry.getLifecycleByRegistry(e));
                 }
             } else {
-                if (isBiomeReg) {
+                if (isBiomeReg) { // ADD
                     mutableregistry.register(thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().getLocation().toString()), entry.getKey(), e, registry.getLifecycleByRegistry(e));
+                    // MODIFIED
                 } else {
                     mutableregistry.register(registry.getId(e), entry.getKey(), e, registry.getLifecycleByRegistry(e));
                 }
             }
+            //
+            // Everything else is as is.
+            //
         }
 
         callback.cancel();

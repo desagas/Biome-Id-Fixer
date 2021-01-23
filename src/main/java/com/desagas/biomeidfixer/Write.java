@@ -103,6 +103,7 @@ public class Write {
         return this.biomeId;
     }
 
+    // If folder does not exist in world directory, create it.
     private boolean buildPathToMaster(String worldFolder) {
         if (worldFolder != null) {
             File masterFolder = new File(worldFolder + "/" + BiomeIdFixer.MOD_ID);
@@ -118,11 +119,10 @@ public class Write {
         return false;
     }
 
-    // TODO make it world specific.
     private boolean isServer() {
         boolean isServerMachine = FMLEnvironment.dist.isDedicatedServer();
-        ;
-        LOGGER.info(!isServerMachine ? "Desagas is on Local Machine" : "Desagas is on Server Machine");
+
+        LOGGER.debug(!isServerMachine ? "Desagas is on Local Machine" : "Desagas is on Server Machine");
         return isServerMachine;
     }
 
@@ -163,7 +163,7 @@ public class Write {
 
     private boolean masterExists() {
         File f = new File(String.valueOf(pathToMaster));
-        LOGGER.info("Desagas: master exists at " + pathToMaster);
+        LOGGER.debug("Desagas: master exists at " + pathToMaster);
         return f.exists();
     }
 
@@ -205,9 +205,9 @@ public class Write {
         }
     }
 
+    // Obtain logo file for world selected, to extrapolate world save folder and save to file for calling from Write, before Integrated or Server loaded.
     public static void writeTemp(String filePath, boolean clear) {
         biomes.clear();
-        LOGGER.info("Desagas filePath:" + filePath);
         filePath = filePath.split("saves/")[1];
         String[] thisString = filePath.split("/");
         String thisPath = "level-name=" + "saves/" + thisString[0];

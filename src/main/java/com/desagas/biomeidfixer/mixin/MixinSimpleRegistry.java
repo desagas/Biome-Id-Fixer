@@ -19,20 +19,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(SimpleRegistry.class)
 public final class MixinSimpleRegistry<T> {
 
-    // TODO Inject code only where needed, there is no reason to write out the entire original code.
-    // This is where it is fully registered. I can make it world specific.
-
-    // The Other, Rats, Maholi, AE2, etc are assigned ids here
+    // The Other, Rats, Maholi, AE2, etc are assigned ids here,
     @Inject(at = @At("HEAD"), method = "Lnet/minecraft/util/registry/SimpleRegistry;validateAndRegister(Ljava/util/OptionalInt;Lnet/minecraft/util/RegistryKey;Ljava/lang/Object;Lcom/mojang/serialization/Lifecycle;)Ljava/lang/Object;", cancellable = true)
     public <V extends T> void validateAndRegisterStart(OptionalInt index, RegistryKey<T> registryKey, V value, Lifecycle lifecycle, CallbackInfoReturnable<V> callback) {
         Validate.notNull(registryKey);
 
+        // Variables added by Desagas
         boolean biomePath = registryKey.getRegistryName().getPath().equals("worldgen/biome");
         com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write();
 
+        // Injecting an id when it is a biome, nothing else.
         if (biomePath) {
             index = OptionalInt.of(thisBiomeId.getOrTryBiomeAssignment(index.isPresent() ? index.getAsInt() : this.nextFreeId, registryKey.getLocation().toString())); // Desagas: use index if available, if not it will find the next int.
         }
+        // No other changes.
     }
 
     @Shadow private int nextFreeId;

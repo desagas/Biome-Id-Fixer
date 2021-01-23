@@ -23,7 +23,7 @@ public class BiomeIdFixer {
     }
 
     @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
+    @SubscribeEvent // Clear loaded mapping file for next map loaded.
     public void onServerStopping(FMLServerStoppingEvent event) {
         File thisString = event.getServer().getWorldIconFile();
         LOGGER.info("Desagas: from server stopping:" + thisString);
@@ -31,7 +31,7 @@ public class BiomeIdFixer {
     }
 
     @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
+    @SubscribeEvent // Create master mapping file instnace for new world creation.
     public void onServerStarting(FMLServerStartingEvent event) {
         File thisString = event.getServer().getWorldIconFile();
         LOGGER.info("Desagas: from server starting:" + thisString);

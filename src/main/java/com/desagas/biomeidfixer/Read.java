@@ -12,6 +12,7 @@ public class Read extends Write {
     private static List<String> thisPropertiesFile = new ArrayList<>();
     private static String fullJsonString = "";
 
+    // Get JSON file and read it.
     protected void importBiomeMap() {
         LOGGER.info(pathToMaster);
         try { thisJsonFile = Files.readAllLines(Paths.get(pathToMaster));
@@ -38,6 +39,7 @@ public class Read extends Write {
         LOGGER.debug("Desagas: found this master list of biomes: " + biomes);
     }
 
+    // Reads either server.properties or the temp file created in Write to get world folder name, before registries happen.
     protected String getServerWorldFolder (String fileName) {
         try { thisPropertiesFile = Files.readAllLines(Paths.get(fileName));
             LOGGER.debug("Desagas: found " + fileName);
