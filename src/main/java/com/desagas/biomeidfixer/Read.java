@@ -5,19 +5,19 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.client.Minecraft;
-import org.apache.logging.log4j.Logger;
 
 public class Read extends Write {
 
     private static List<String> thisJsonFile = new ArrayList<>();
+    private static List<String> thisPropertiesFile = new ArrayList<>();
     private static String fullJsonString = "";
 
     protected void importBiomeMap() {
-        try { thisJsonFile = Files.readAllLines(Paths.get(masterFile));
-            LOGGER.debug("Desagas: read for import the master list of biomes at " + masterFile);
+        LOGGER.info(pathToMaster);
+        try { thisJsonFile = Files.readAllLines(Paths.get(pathToMaster));
+            LOGGER.debug("Desagas: read for importing the master list of biomes at " + pathToMaster);
         } catch (IOException e) {
-            LOGGER.error("Desagas: could not read for import the master list of biomes at " + masterFile);
+            LOGGER.error("Desagas: could not read for importing the master list of biomes at " + pathToMaster);
             e.printStackTrace(); }
 
         for (String jsonLine : thisJsonFile) {
@@ -36,5 +36,21 @@ public class Read extends Write {
         }
 
         LOGGER.debug("Desagas: found this master list of biomes: " + biomes);
+    }
+
+    protected String getServerWorldFolder (String fileName) {
+        try { thisPropertiesFile = Files.readAllLines(Paths.get(fileName));
+            LOGGER.debug("Desagas: found " + fileName);
+        } catch (IOException e) {
+            LOGGER.error("Desagas: could not find " + fileName);
+            e.printStackTrace(); }
+
+        for (String serverPropertyLine : thisPropertiesFile) {
+            if (serverPropertyLine.contains("level-name=")) {
+                return serverPropertyLine.split("=")[1];
+            }
+        }
+
+        return null;
     }
 }

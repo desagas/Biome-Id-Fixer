@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// TODO Inject code only where needed, there is no reason to write out the entire original code.
+// TODO Inject code only in for loop, if possible to override only that.
 
 // BYG, BoP, and Vanilla are assigned ids here
 @Mixin(DynamicRegistries.class)
@@ -40,22 +40,18 @@ public abstract class MixinDynamicRegistries {
 
         for(Map.Entry<RegistryKey<E>, E> entry : registry.getEntries()) {
             E e = entry.getValue();
-            if (entry.getKey().getRegistryName().getPath().equals("worldgen/biome")) {
-                LOGGER.debug("Desagas broke into the Dynamic Registry to reorganize the biome entries.");
-            }
+            boolean isBiomeReg = entry.getKey().getRegistryName().getPath().equals("worldgen/biome");
 
-            com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write(); // Desagas: creates reference to code to fix biome assignment.
+            com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write();
 
             if (flag) {
-                if (entry.getKey().getRegistryName().getPath().equals("worldgen/biome")) { // Desagas: int id Changed to Master Map or Recorded.
-                    LOGGER.debug("Desagas: handling minecraft flagged biome.");
+                if (isBiomeReg) {
                     registryAccess.encode(registries, entry.getKey(), codecHolder.getRegistryCodec(), thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().getLocation().toString()), e, registry.getLifecycleByRegistry(e));
                 } else {
                     registryAccess.encode(registries, entry.getKey(), codecHolder.getRegistryCodec(), registry.getId(e), e, registry.getLifecycleByRegistry(e));
                 }
             } else {
-                if (entry.getKey().getRegistryName().getPath().equals("worldgen/biome")) { // Desagas: int id Changed to Master Map or Recorded.
-                    LOGGER.debug("Desagas: handling minecraft unflagged biome.");
+                if (isBiomeReg) {
                     mutableregistry.register(thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().getLocation().toString()), entry.getKey(), e, registry.getLifecycleByRegistry(e));
                 } else {
                     mutableregistry.register(registry.getId(e), entry.getKey(), e, registry.getLifecycleByRegistry(e));
@@ -69,7 +65,7 @@ public abstract class MixinDynamicRegistries {
     @Shadow private static <E> void put(ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> codecHolder, RegistryKey<? extends Registry<E>> registryKey, Codec<E> codec, Codec<E> codec2) { throw new IllegalStateException("Mixin failed to shadow put1()"); }
     @Shadow private static <E> void put(ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> codecHolder, RegistryKey<? extends Registry<E>> registryKey, Codec<E> codec) { throw new IllegalStateException("Mixin failed to shadow put2()"); }
     @Shadow private static <R extends Registry<?>> void getWorldGenRegistry(DynamicRegistries.Impl dynamicRegistries, RegistryKey<R> key) { throw new IllegalStateException("Mixin failed to shadow getWorldGenRegistry()"); };
-    @Shadow @Final private static Logger LOGGER;
+
     @Shadow private static final Map<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> registryCodecMap = Util.make(() -> {
         ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> builder = ImmutableMap.builder();
         put(builder, Registry.DIMENSION_TYPE_KEY, DimensionType.CODEC, DimensionType.CODEC);
@@ -83,6 +79,7 @@ public abstract class MixinDynamicRegistries {
         put(builder, Registry.NOISE_SETTINGS_KEY, DimensionSettings.field_236097_a_);
         return builder.build();
     });
+
     @Shadow private static final DynamicRegistries.Impl registries = Util.make(() -> {
         DynamicRegistries.Impl dynamicregistries$impl = new DynamicRegistries.Impl();
         DimensionType.registerTypes(dynamicregistries$impl);

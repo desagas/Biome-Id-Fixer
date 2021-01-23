@@ -5,7 +5,8 @@
     "refmap": "biomeidfixer.refmap.json",
     "mixins": [
         "MixinSimpleRegistry",
-        "MixinDynamicRegistries"
+        "MixinDynamicRegistries",
+        "MixinWorldSelectionList"
     ],
     "minVersion": "0.8"
 }

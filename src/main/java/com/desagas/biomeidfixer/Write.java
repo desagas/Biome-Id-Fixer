@@ -47,47 +47,28 @@ public class Write {
 
     protected int biomeId;
     protected String biomeLocation;
+    protected static String pathToMaster;
+    protected static final String tempFileName = "biomeidfixer.temp";
+    protected static final String masterFileName = "BiomeIdFixer.json";
+    protected static final String serverProperties = "server.properties";
     protected static final Map<Integer, String> biomes = new HashMap<Integer, String>();
-    protected static final String masterFile = "BiomeIdFixer.json";
-    protected File pathToMaster;
-    protected boolean worldLoaded;
 
-    private static final FolderName FOLDER = new FolderName(BiomeIdFixer.MOD_ID);
-
-    public int getOrTryBiomeAssignment (int biomeId, String biomeLocation) {
+    public int getOrTryBiomeAssignment(int biomeId, String biomeLocation) {
         this.biomeId = biomeId;
         this.biomeLocation = biomeLocation;
 
-        boolean shoudlProceed = false;
-
-        // TODO Fix this, I need to get the name of the world and its folder, after it is clicked to open, but before it registers the biomes.
-        if (isServer()) {
-            // TODO, need to create function similar to isOrCreateFolder, below, for the server. I need to find out how to know if the world is loaded or not on the server.
-            shoudlProceed = true;
-        } else {
-//            if (isLocalWorld()) { // Works, but doing this pushes off until the world is loaded.
-                shoudlProceed = true;
-////                if (isISLoaded()) { // Works, but doing this pushes off until the world is laoded, and this is where I can make an actual file within the world.
-////                    if (isOrCreateFolder()) { // Works, this creates the folders and file in the world save.
-////                    }
-////                }
-//            }
-        }
-
-        if (shoudlProceed) {
-
-            StringBuilder feedback = new StringBuilder();
-            feedback.append("Desagas: request for biomeId ").append(this.biomeId).append(" at ").append(this.biomeLocation);
+        if (buildPathToMaster(new Read().getServerWorldFolder(isServer() ? serverProperties : tempFileName))) {
 
             if (masterExists()) {
                 if (biomes.isEmpty()) {
                     new Read().importBiomeMap();
                 }
-            } else {
-                if (!createMaster()) {
-                    return -1;
-                }
+            } else if (!createMaster()) {
+                return -1;
             }
+
+            StringBuilder feedback = new StringBuilder();
+            feedback.append("Desagas: request for biomeId ").append(this.biomeId).append(" at ").append(this.biomeLocation);
 
             int returnId = -1;
 
@@ -111,58 +92,64 @@ public class Write {
                 default:
                     throw new IllegalStateException("Desagas: unexpected canAssignIdtoBiome() logic value assigned: " + canAssignIdtoBiome());
             }
-
             LOGGER.info(feedback);
 
             writeJson(getPrettyJsonString());
 
+            LOGGER.info("FINAL INT: " + returnId);
             return returnId;
         }
 
         return this.biomeId;
     }
 
+    private boolean buildPathToMaster(String worldFolder) {
+        if (worldFolder != null) {
+            File masterFolder = new File(worldFolder + "/" + BiomeIdFixer.MOD_ID);
+            if (isOrCreateFolder(masterFolder)) {
+                pathToMaster = masterFolder + "/" + masterFileName;
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            pathToMaster = "temp" + masterFileName;
+        }
+        return false;
+    }
+
     // TODO make it world specific.
-    private boolean isServer () {
-        boolean isServerMachine = FMLEnvironment.dist.isDedicatedServer();;
-        LOGGER.debug(!isServerMachine ? "Desagas is on Local Machine" : "Desagas is on Server Machine");
+    private boolean isServer() {
+        boolean isServerMachine = FMLEnvironment.dist.isDedicatedServer();
+        ;
+        LOGGER.info(!isServerMachine ? "Desagas is on Local Machine" : "Desagas is on Server Machine");
         return isServerMachine;
     }
 
-    private boolean isLocalWorld () {
-        boolean isLocal = Minecraft.getInstance().isSingleplayer();
-        LOGGER.debug(isLocal ? "Desagas is in Local World" : "Desagas is in Remote World");
-        return isLocal;
+    private boolean isOrCreateFolder(File containingFolder) {
+        return containingFolder.exists() || containingFolder.mkdirs();
     }
 
-    private boolean isISLoaded () {
-        boolean isISLoaded = Minecraft.getInstance().getIntegratedServer() != null;
-        LOGGER.debug("Desagas: Integrated Server is Loaded.");
-        return isISLoaded;
-    }
-
-    private boolean isOrCreateFolder () {
-        this.pathToMaster = ServerLifecycleHooks.getCurrentServer().func_240776_a_(FOLDER).toFile();
-        return this.pathToMaster.exists() || this.pathToMaster.mkdirs();
-    }
-
-    private int assignId () {
+    private int assignId() {
         biomes.put(this.biomeId, this.biomeLocation);
         return this.biomeId;
     }
 
-    private int findId () {
+    private int findId() {
         Iterator huntId = biomes.entrySet().iterator();
         while (huntId.hasNext()) {
-            Map.Entry pair = (Map.Entry)huntId.next();
+            Map.Entry pair = (Map.Entry) huntId.next();
             LOGGER.debug("Desagas: checked " + this.biomeLocation + " against " + pair.getValue());
-            if (pair.getValue().equals(this.biomeLocation)) { LOGGER.debug("       : found a match!"); return (int)pair.getKey(); }
+            if (pair.getValue().equals(this.biomeLocation)) {
+                LOGGER.debug("       : found a match!");
+                return (int) pair.getKey();
+            }
         }
 
         return -1;
     }
 
-    private String getPrettyJsonString () {
+    private String getPrettyJsonString() {
         Gson uglyGson = new Gson();
         JsonParser parseJson = new JsonParser();
         Gson betterGson = new GsonBuilder().setPrettyPrinting().create();
@@ -174,41 +161,61 @@ public class Write {
         return betterGson.toJson(parsedJson);
     }
 
-    private boolean masterExists () {
-        File f = new File(masterFile);
+    private boolean masterExists() {
+        File f = new File(String.valueOf(pathToMaster));
+        LOGGER.info("Desagas: master exists at " + pathToMaster);
         return f.exists();
     }
 
-    private boolean createMaster () {
-        try { FileWriter master = new FileWriter(masterFile);
-            LOGGER.info("Desagas: created master list of mapped biomes at " + masterFile);
+    private boolean createMaster() {
+        try {
+            FileWriter master = new FileWriter(pathToMaster);
+            LOGGER.info("Desagas: created master list of mapped biomes at " + pathToMaster);
             return true;
-        } catch (IOException e) { e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
             LOGGER.error("Desagas: could not create master list of mapped biomes.");
             return false;
         }
     }
 
-    private int canAssignIdtoBiome () {
+    private int canAssignIdtoBiome() {
         boolean a, b, c = false;
         a = biomes.containsKey(this.biomeId);
         b = biomes.containsValue(this.biomeLocation);
-        if (a && b) { c = biomes.get(this.biomeId).equals(this.biomeLocation); }
+        if (a && b) {
+            c = biomes.get(this.biomeId).equals(this.biomeLocation);
+        }
 
-        return  (a && b) && c ? 0 : // Both already assigned and matching; !!! IMPORTANT <-- Must go first.
+        return (a && b) && c ? 0 : // Both already assigned and matching; !!! IMPORTANT <-- Must go first.
                 !a && !b ? 1 : // Neither assigned; !!! IMPORTANT <-- Can go anywhere.
-                b && !c ? 2 : // Biome assigned but does not match key; !!! IMPORTANT <-- Do before assigning new key to add.
-                !b ? 3 : 9; // Biome not assigned but key is assigned; !!! <-- Do last.
+                        b && !c ? 2 : // Biome assigned but does not match key; !!! IMPORTANT <-- Do before assigning new key to add.
+                                !b ? 3 : 9; // Biome not assigned but key is assigned; !!! <-- Do last.
     }
 
-    private void writeJson (String prettyString) {
+    private void writeJson(String prettyString) {
         try {
-            FileWriter jsonWriter = new FileWriter(masterFile);
+            FileWriter jsonWriter = new FileWriter(pathToMaster);
             jsonWriter.write(prettyString);
             jsonWriter.flush();
             LOGGER.debug("Desagas: updated master list of mapped biomes.");
         } catch (IOException e) {
             LOGGER.error("Desagas: could not update master list of mapped biomes.");
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeTemp(String filePath, boolean clear) {
+        biomes.clear();
+        LOGGER.info("Desagas filePath:" + filePath);
+        filePath = filePath.split("saves/")[1];
+        String[] thisString = filePath.split("/");
+        String thisPath = "level-name=" + "saves/" + thisString[0];
+        try {
+            FileWriter tempWriter = new FileWriter(tempFileName);
+            tempWriter.write(!clear ? thisPath : "");
+            tempWriter.flush();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
