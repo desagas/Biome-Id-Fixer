@@ -4,14 +4,14 @@
 
 Biome Id Fixer assigns the biome ids to a master id list, and calls from that list when minecraft needs to access the biome ids, for things like new generation, loading biome info for current generation, for sending to clients from servers, etc. It does not change the ids that are initially registered, only subsequent biome additions.
 
-###Next update will make this mod World Specific, as it is currently Pack Instance Specific.
+### Biome Ids are now world specific, and do not require you to restart the pack to adjust them, only the world..
 
 *   This was made with Forge 1.16.4.35.1.29, and works tested up to 1.16.5.36.0.1.
-*   I have tested it with ATM6, 1.3.7 through 1.4.0, and it works fine, with ALL mods installed.
-*   I have tested it on both Dedicated Servers and single player Clients.
+*   I have tested it with ATM6, 1.3.7 through 1.4.1, and it works fine, with ALL mods installed.
+*   I have tested it on both dedicated Servers and single player Clients. 
+*   I have now tested on Mac and Windows.
 *   Works with AE2 biomes, [Rats: Ratlantis](https://www.curseforge.com/minecraft/mc-mods/rats-ratlantis) biomes, [Oh the Biomes You Go (BYG)](https://www.curseforge.com/minecraft/mc-mods/oh-the-biomes-youll-go) biomes, [Biomes o'Plenty (BoP)](https://www.curseforge.com/minecraft/mc-mods/biomes-o-plenty) biomes, [Mahou Tsukai](https://www.curseforge.com/minecraft/mc-mods/mahou-tsukai) biomes, and Vanilla Minecraft biomes.
-
-
+    
 * ###### This does not prevent sharp biome edges from happening around new chunks. When you add biomes, there is only so much space to occupy, so Minecraft/Forge distribute biomes based on weight, which means that where one biome was, another one may exist when updateing. Same when removing biomes.
 
     

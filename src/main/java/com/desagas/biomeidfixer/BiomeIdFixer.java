@@ -1,11 +1,12 @@
 package com.desagas.biomeidfixer;
 
 import java.io.File;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
@@ -22,19 +23,33 @@ public class BiomeIdFixer {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
-    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent // Clear loaded mapping file for next map loaded.
     public void onServerStopping(FMLServerStoppingEvent event) {
-        File thisString = event.getServer().getWorldIconFile();
-        LOGGER.info("Desagas: from server stopping:" + thisString);
-        Write.writeTemp(String.valueOf(thisString), true);
+        if (event.getServer().isSinglePlayer()) {
+            File thisString = event.getServer().getWorldIconFile();
+            new Write().writeTemp(String.valueOf(thisString), true);
+        }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent // Create master mapping file instnace for new world creation.
+    @SubscribeEvent // Create master mapping file instnace for new world creation. If multiple worlds are opened at once from same player machine, it may break.
     public void onServerStarting(FMLServerStartingEvent event) {
-        File thisString = event.getServer().getWorldIconFile();
-        LOGGER.info("Desagas: from server starting:" + thisString);
-        Write.writeTemp(String.valueOf(thisString), false);
+        if (event.getServer().isSinglePlayer()) {
+            File thisString = event.getServer().getWorldIconFile();
+            new Write().writeTemp(String.valueOf(thisString), false);
+        }
+    }
+
+    @SubscribeEvent
+    public void onServerStarted(FMLServerStartedEvent event) {
+        new Write().transferTemp(false); // Transfer and remove temporary new biome map.
+    }
+
+    @SubscribeEvent // Create master mapping file instnace for new world creation.
+    public void onClient(EntityJoinWorldEvent event) {
+        if (event.getWorld().isRemote()) { // If not called, servers call error for next line.
+            if (event.getEntity().getClass() == ClientPlayerEntity.class) { // Only client entity, as we only care about if we made it into the world.
+                new Write().transferTemp(true); // Do not update or create anything, simply delete the temp master list created, as it does nothing, but can inject whenloading another world.
+            }
+        }
     }
 }

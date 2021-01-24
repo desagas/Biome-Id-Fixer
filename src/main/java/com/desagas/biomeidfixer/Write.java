@@ -4,42 +4,12 @@ import com.google.gson.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
-import javafx.stage.DirectoryChooser;
-import net.minecraft.client.AnvilConverterException;
-import net.minecraft.client.GameConfiguration;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.inventory.InventoryScreen;
-import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.resources.FolderPackFinder;
-import net.minecraft.resources.IPackNameDecorator;
-import net.minecraft.resources.ServerPackFinder;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.dedicated.DedicatedPlayerList;
-import net.minecraft.server.integrated.IntegratedServer;
-import net.minecraft.util.MinecraftVersion;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldSettings;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.storage.*;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.event.world.BiomeLoadingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.event.server.ServerLifecycleEvent;
-import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.HashMap;
-
-// TODO Save config in world folder on both Server and Client worlds.
 
 public class Write {
 
@@ -50,8 +20,10 @@ public class Write {
     protected static String pathToMaster;
     protected static final String tempFileName = "biomeidfixer.temp";
     protected static final String masterFileName = "BiomeIdFixer.json";
+    protected static final String tempMasterFile = "NewWorld" + masterFileName;
     protected static final String serverProperties = "server.properties";
     protected static final Map<Integer, String> biomes = new HashMap<Integer, String>();
+    protected static String sep = "/";
 
     public int getOrTryBiomeAssignment(int biomeId, String biomeLocation) {
         this.biomeId = biomeId;
@@ -61,51 +33,78 @@ public class Write {
 
             if (masterExists()) {
                 if (biomes.isEmpty()) {
-                    new Read().importBiomeMap();
+                    new Read().importBiomeMap(false);
                 }
             } else if (!createMaster()) {
                 return -1;
             }
 
             StringBuilder feedback = new StringBuilder();
-            feedback.append("Desagas: request for biomeId ").append(this.biomeId).append(" at ").append(this.biomeLocation);
 
             int returnId = -1;
 
             switch (canAssignIdtoBiome()) {
                 case 0: // Already assigned;
                     returnId = this.biomeId;
+                    feedback.append("Desagas: request for biomeId ").append(this.biomeId).append(" at ").append(this.biomeLocation);
                     feedback.append(" - already assigned.");
+                    LOGGER.debug(feedback);
                     break;
                 case 1: // Not assigned;
                     returnId = assignId();
+                    feedback.append("Desagas: request for biomeId ").append(this.biomeId).append(" at ").append(this.biomeLocation);
                     feedback.append(" - now assigned.");
+                    LOGGER.info(feedback);
                     break;
                 case 2: // Biome assigned, not to the id;
                     returnId = findId();
+                    feedback.append("Desagas: request for biomeId ").append(this.biomeId).append(" at ").append(this.biomeLocation);
                     feedback.append(" - not assigned: stored biomeId ").append(returnId).append(" used instead.");
+                    LOGGER.info(feedback);
                     break;
                 case 3: // Id assigned, not to the biome;
                     returnId = getOrTryBiomeAssignment(this.biomeId + 1, this.biomeLocation);
+                    feedback.append("Desagas: request for biomeId ").append(this.biomeId).append(" at ").append(this.biomeLocation);
                     feedback.append(" - not assigned: newly registered biome assigned biomeId ").append(returnId);
+                    LOGGER.info(feedback);
                     break;
                 default:
                     throw new IllegalStateException("Desagas: unexpected canAssignIdtoBiome() logic value assigned: " + canAssignIdtoBiome());
             }
-            LOGGER.info(feedback);
 
             writeJson(getPrettyJsonString());
 
-            LOGGER.info("FINAL INT: " + returnId);
             return returnId;
         }
 
         return this.biomeId;
     }
 
+    protected void transferTemp (boolean isPlayeronRemote) {
+        if (new File(String.valueOf(tempMasterFile)).exists()) {
+            if (!isPlayeronRemote) {
+                if (buildPathToMaster(new Read().getServerWorldFolder(isServer() ? serverProperties : tempFileName))) {
+                    if (masterExists() || createMaster()) {
+                        new Read().importBiomeMap(true);
+                        writeJson(getPrettyJsonString());
+                    } else {
+                        LOGGER.error("Desagas: cannot access master to transfer master list of biomes into.");
+                    }
+                } else {
+                    LOGGER.error("Desagas: cannot access world folder.");
+                }
+            }
+            LOGGER.info(removeTemp() ? "Desagas: removed temp master file." : "Desagas: could not remove temp master file.");
+        }
+    }
+
+    private boolean removeTemp () {
+        return new File(String.valueOf(tempMasterFile)).delete();
+    }
+
     // If folder does not exist in world directory, create it.
     private boolean buildPathToMaster(String worldFolder) {
-        if (worldFolder != null) {
+        if (!worldFolder.equals("isTemp")) {
             File masterFolder = new File(worldFolder + "/" + BiomeIdFixer.MOD_ID);
             if (isOrCreateFolder(masterFolder)) {
                 pathToMaster = masterFolder + "/" + masterFileName;
@@ -114,16 +113,14 @@ public class Write {
                 return false;
             }
         } else {
-            pathToMaster = "temp" + masterFileName;
+            pathToMaster = tempMasterFile;
+            LOGGER.debug("Desagas: using or creating temp master at " + pathToMaster);
+            return true;
         }
-        return false;
     }
 
     private boolean isServer() {
-        boolean isServerMachine = FMLEnvironment.dist.isDedicatedServer();
-
-        LOGGER.debug(!isServerMachine ? "Desagas is on Local Machine" : "Desagas is on Server Machine");
-        return isServerMachine;
+        return FMLEnvironment.dist.isDedicatedServer();
     }
 
     private boolean isOrCreateFolder(File containingFolder) {
@@ -170,7 +167,7 @@ public class Write {
     private boolean createMaster() {
         try {
             FileWriter master = new FileWriter(pathToMaster);
-            LOGGER.info("Desagas: created master list of mapped biomes at " + pathToMaster);
+            LOGGER.info("Desagas: created master list of mapped biomes in " + pathToMaster);
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -206,11 +203,18 @@ public class Write {
     }
 
     // Obtain logo file for world selected, to extrapolate world save folder and save to file for calling from Write, before Integrated or Server loaded.
-    public static void writeTemp(String filePath, boolean clear) {
-        biomes.clear();
-        filePath = filePath.split("saves/")[1];
-        String[] thisString = filePath.split("/");
-        String thisPath = "level-name=" + "saves/" + thisString[0];
+    public void writeTemp(String filePath, boolean clear) {
+        if (filePath.contains("/") || filePath.contains("\\")) {
+            // Mac ./saves/New World (1)/icon.png
+            // PC E:\Minecraft\Instances\MyTask\saves\New World\icon.png
+            sep = Minecraft.IS_RUNNING_ON_MAC ? "/" : "\\\\";
+            biomes.clear();
+            filePath = filePath.split("saves" + sep)[1];
+            filePath = filePath.split(sep)[0];
+        }
+
+        LOGGER.info("Desagas: is registering your world folder name as " + ((!clear) ? filePath : ""));
+        String thisPath = "level-name=" + "saves" + sep + filePath;
         try {
             FileWriter tempWriter = new FileWriter(tempFileName);
             tempWriter.write(!clear ? thisPath : "");

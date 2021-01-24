@@ -39,6 +39,7 @@ public abstract class MixinDynamicRegistries {
         for(Map.Entry<RegistryKey<E>, E> entry : registry.getEntries()) {
             E e = entry.getValue();
 
+            //
             // My changes start here. Very small.
             // Desagas added: if is biome registry below this line, and link to my path for id.
             //
