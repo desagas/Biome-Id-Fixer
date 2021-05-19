@@ -25,6 +25,7 @@ public class Write {
     protected static String sep = "/";
 
     public int getOrTryBiomeAssignment(int biomeId, String biomeLocation) {
+
         this.biomeId = biomeId;
         this.biomeLocation = biomeLocation;
 

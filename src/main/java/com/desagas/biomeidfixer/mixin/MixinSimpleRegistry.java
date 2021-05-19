@@ -25,6 +25,7 @@ public final class MixinSimpleRegistry<T> {
         Validate.notNull(registryKey);
 
         // Variables added by Desagas
+        // org.apache.logging.log4j.LogManager.getLogger().debug("Desagas: SimpleEntry - " + registryKey.getRegistryName().getPath().toString());
         boolean biomePath = registryKey.getRegistryName().getPath().equals("worldgen/biome");
         com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write();
 

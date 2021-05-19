@@ -42,6 +42,7 @@ public abstract class MixinDynamicRegistries {
             // My changes start here. Very small.
             // Desagas added: if is biome registry below this line, add link to my path for id.
 
+            // org.apache.logging.log4j.LogManager.getLogger().debug("Desagas: DynamicEntry - " + entry.getKey().getRegistryName().getPath().toString());
             boolean isBiomeReg = entry.getKey().getRegistryName().getPath().equals("worldgen/biome"); // ADD
 
             com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write(); // ADD
@@ -108,7 +109,7 @@ public abstract class MixinDynamicRegistries {
         }
     }
 
-    @Shadow    private static <E> void copy(DynamicRegistries.Impl p_243606_0_, Registry<E> p_243606_1_) {
+    @Shadow private static <E> void copy(DynamicRegistries.Impl p_243606_0_, Registry<E> p_243606_1_) {
         MutableRegistry<E> mutableregistry = p_243606_0_.<E>registry(p_243606_1_.key()).orElseThrow(() -> {
             return new IllegalStateException("Missing registry: " + p_243606_1_.key());
         });

@@ -1,6 +1,7 @@
 package com.desagas.biomeidfixer;
 
 import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -41,8 +42,8 @@ public class BiomeIdFixer {
 
     @SubscribeEvent // Create master mapping file for new server worlds.
     public void onClientJoinWorld(EntityJoinWorldEvent event) {
-        if (!event.getWorld().isClientSide()) { // If not called, servers call error for next line.
-            if (event.getEntity().getClass() == ClientPlayerEntity.class) { // Only client entity, as we only care about if we made it into the world.
+        if (!event.getWorld().isClientSide) { // If not called, servers call error for next line.
+            if (event.getEntity().getClass() == PlayerEntity.class) { // Only client entity, as we only care about if we made it into the world.
                 LOGGER.info("Desagas: started 'EntityJoinWorldEvent' processes.");
                 new Write().transferTemp(true); // Do not update or create anything, simply delete the temp master list created, as it does nothing, but can inject when loading another world.
                 LOGGER.info("Desagas: ended 'EntityJoinWorldEvent' processes.");
