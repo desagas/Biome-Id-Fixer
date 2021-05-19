@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public final class MixinSimpleRegistry<T> {
 
     // The Other, Rats, Maholi, AE2, etc are assigned ids here,
-    @Inject(at = @At("HEAD"), method = "Lnet/minecraft/util/registry/SimpleRegistry;validateAndRegister(Ljava/util/OptionalInt;Lnet/minecraft/util/RegistryKey;Ljava/lang/Object;Lcom/mojang/serialization/Lifecycle;)Ljava/lang/Object;", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "Lnet/minecraft/util/registry/SimpleRegistry;registerOrOverride(Ljava/util/OptionalInt;Lnet/minecraft/util/RegistryKey;Ljava/lang/Object;Lcom/mojang/serialization/Lifecycle;)Ljava/lang/Object;", cancellable = true)
     public <V extends T> void validateAndRegisterStart(OptionalInt index, RegistryKey<T> registryKey, V value, Lifecycle lifecycle, CallbackInfoReturnable<V> callback) {
         Validate.notNull(registryKey);
 
@@ -30,20 +30,20 @@ public final class MixinSimpleRegistry<T> {
 
         // Injecting an id when it is a biome, nothing else.
         if (biomePath) {
-            index = OptionalInt.of(thisBiomeId.getOrTryBiomeAssignment(index.isPresent() ? index.getAsInt() : this.nextFreeId, registryKey.getLocation().toString())); // Desagas: use index if available, if not it will find the next int.
+            index = OptionalInt.of(thisBiomeId.getOrTryBiomeAssignment(index.isPresent() ? index.getAsInt() : this.nextId, registryKey.location().toString())); // Desagas: use index if available, if not it will find the next int.
         }
         // No other changes.
     }
 
-    @Shadow private int nextFreeId;
+    @Shadow private int nextId;
 
-    @Mutable @Final @Shadow private final BiMap<RegistryKey<T>, T> keyToObjectMap;
-    @Mutable @Final @Shadow private final Object2IntMap<T> entryIndexMap;
-    @Mutable @Final @Shadow private final Map<T, Lifecycle> objectToLifecycleMap;
+    @Mutable @Final @Shadow private final BiMap<RegistryKey<T>, T> keyStorage;
+    @Mutable @Final @Shadow private final Object2IntMap<T> toId;
+    @Mutable @Final @Shadow private final Map<T, Lifecycle> lifecycles;
 
     public MixinSimpleRegistry(BiMap<RegistryKey<T>, T> keyToObjectMap, Object2IntMap<T> entryIndexMap, Map<T, Lifecycle> objectToLifecycleMap) {
-        this.keyToObjectMap = keyToObjectMap;
-        this.entryIndexMap = entryIndexMap;
-        this.objectToLifecycleMap = objectToLifecycleMap;
+        this.keyStorage = keyToObjectMap;
+        this.toId = entryIndexMap;
+        this.lifecycles = objectToLifecycleMap;
     }
 }

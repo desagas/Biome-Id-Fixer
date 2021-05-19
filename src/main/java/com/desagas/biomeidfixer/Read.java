@@ -17,9 +17,9 @@ public class Read extends Write {
     protected void importBiomeMap(boolean isTemp) {
         String fileToRead = isTemp ? tempMasterFile : pathToMaster;
         try { thisJsonFile = Files.readAllLines(Paths.get(fileToRead));
-            LOGGER.debug("Desagas: read for importing the master list of biomes at " + fileToRead);
+            LOGGER.debug("Desagas: read master biomemap at '" + fileToRead);
         } catch (IOException e) {
-            LOGGER.error("Desagas: could not read for importing the master list of biomes at " + fileToRead);
+            LOGGER.error("Desagas: could not read master biomemap at " + fileToRead);
             e.printStackTrace(); }
 
         for (String jsonLine : thisJsonFile) {
@@ -37,19 +37,19 @@ public class Read extends Write {
             biomes.put(thisBiomeId, thisBiomeLocation);
         }
 
-        LOGGER.debug("Desagas: found this master list of biomes: " + biomes);
+        LOGGER.debug("Desagas: found this master biomemap: " + biomes);
     }
 
     // Reads either server.properties or the temp file created in Write to get world folder name, before registries happen.
     protected String getServerWorldFolder (String fileName) {
         if (!new File(String.valueOf(fileName)).exists()) {
-            LOGGER.debug("Desagas: request failed for getting world name from " + fileName);
+            LOGGER.debug("Desagas: tempoaray config file '" + fileName + "' does not exist.");
             return "isTemp";
         } else {
             try { thisPropertiesFile = Files.readAllLines(Paths.get(fileName));
-                LOGGER.debug("Desagas: found " + fileName);
+                LOGGER.debug("Desagas: found '" + fileName + "'");
             } catch (IOException e) {
-                LOGGER.error("Desagas: could not find " + fileName);
+                LOGGER.error("Desagas: could not find '" + fileName + "'");
                 e.printStackTrace(); }
 
             for (String serverPropertyLine : thisPropertiesFile) {

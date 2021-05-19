@@ -15,6 +15,7 @@ import net.minecraft.world.gen.feature.StructureFeature;
 import net.minecraft.world.gen.feature.jigsaw.JigsawPattern;
 import net.minecraft.world.gen.feature.template.IStructureProcessorType;
 import net.minecraft.world.gen.surfacebuilders.ConfiguredSurfaceBuilder;
+import org.apache.logging.log4j.LogManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,39 +28,38 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DynamicRegistries.class)
 public abstract class MixinDynamicRegistries {
 
-    @Inject(at = @At("HEAD"), method = "Lnet/minecraft/util/registry/DynamicRegistries;registerRegistry(Lnet/minecraft/util/registry/DynamicRegistries$Impl;Lnet/minecraft/util/registry/WorldSettingsImport$IResourceAccess$RegistryAccess;Lnet/minecraft/util/registry/DynamicRegistries$CodecHolder;)V", cancellable = true)
-    private static <E> void registerRegistry(DynamicRegistries.Impl dynamicRegistries, WorldSettingsImport.IResourceAccess.RegistryAccess registryAccess, DynamicRegistries.CodecHolder<E> codecHolder, CallbackInfo callback) {
-        RegistryKey<? extends Registry<E>> registrykey = codecHolder.getRegistryKey();
-        boolean flag = !registrykey.equals(Registry.NOISE_SETTINGS_KEY) && !registrykey.equals(Registry.DIMENSION_TYPE_KEY);
-        Registry<E> registry = registries.getRegistry(registrykey);
-        if (!registrykey.equals(Registry.DIMENSION_TYPE_KEY))
-            registry = ((Registry<Registry<E>>)WorldGenRegistries.ROOT_REGISTRIES).getValueForKey((RegistryKey<Registry<E>>)registrykey);
-        MutableRegistry<E> mutableregistry = dynamicRegistries.getRegistry(registrykey);
+    @Inject(at = @At("HEAD"), method = "Lnet/minecraft/util/registry/DynamicRegistries;addBuiltinElements(Lnet/minecraft/util/registry/DynamicRegistries$Impl;Lnet/minecraft/util/registry/WorldSettingsImport$IResourceAccess$RegistryAccess;Lnet/minecraft/util/registry/DynamicRegistries$CodecHolder;)V", cancellable = true)
+    private static <E> void registerRegistry(DynamicRegistries.Impl p_243607_0_, WorldSettingsImport.IResourceAccess.RegistryAccess p_243607_1_, DynamicRegistries.CodecHolder<E> p_243607_2_, CallbackInfo callback) {
+        RegistryKey<? extends Registry<E>> registrykey = p_243607_2_.key();
+        boolean flag = !registrykey.equals(Registry.NOISE_GENERATOR_SETTINGS_REGISTRY) && !registrykey.equals(Registry.DIMENSION_TYPE_REGISTRY);
+        Registry<E> registry = BUILTIN.registryOrThrow(registrykey);
+        if (!registrykey.equals(Registry.DIMENSION_TYPE_REGISTRY))
+            registry = ((Registry<Registry<E>>)WorldGenRegistries.REGISTRY).get((RegistryKey<Registry<E>>)registrykey);
+        MutableRegistry<E> mutableregistry = p_243607_0_.registryOrThrow(registrykey);
 
-        for(Map.Entry<RegistryKey<E>, E> entry : registry.getEntries()) {
+        for(Map.Entry<RegistryKey<E>, E> entry : registry.entrySet()) {
             E e = entry.getValue();
 
-            //
             // My changes start here. Very small.
-            // Desagas added: if is biome registry below this line, and link to my path for id.
-            //
+            // Desagas added: if is biome registry below this line, add link to my path for id.
+
             boolean isBiomeReg = entry.getKey().getRegistryName().getPath().equals("worldgen/biome"); // ADD
 
             com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write(); // ADD
 
             if (flag) {
                 if (isBiomeReg) { // ADD
-                    registryAccess.encode(registries, entry.getKey(), codecHolder.getRegistryCodec(), thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().getLocation().toString()), e, registry.getLifecycleByRegistry(e));
+                    p_243607_1_.add(BUILTIN, entry.getKey(), p_243607_2_.codec(), thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().location().toString()), e, registry.lifecycle(e));
                     // MODIFIED
                 } else {
-                    registryAccess.encode(registries, entry.getKey(), codecHolder.getRegistryCodec(), registry.getId(e), e, registry.getLifecycleByRegistry(e));
+                    p_243607_1_.add(BUILTIN, entry.getKey(), p_243607_2_.codec(), registry.getId(e), e, registry.lifecycle(e));
                 }
             } else {
                 if (isBiomeReg) { // ADD
-                    mutableregistry.register(thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().getLocation().toString()), entry.getKey(), e, registry.getLifecycleByRegistry(e));
+                    mutableregistry.registerMapping(thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().location().toString()), entry.getKey(), e, registry.lifecycle(e));
                     // MODIFIED
                 } else {
-                    mutableregistry.register(registry.getId(e), entry.getKey(), e, registry.getLifecycleByRegistry(e));
+                    mutableregistry.registerMapping(registry.getId(e), entry.getKey(), e, registry.lifecycle(e));
                 }
             }
             //
@@ -72,28 +72,51 @@ public abstract class MixinDynamicRegistries {
 
     @Shadow private static <E> void put(ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> codecHolder, RegistryKey<? extends Registry<E>> registryKey, Codec<E> codec, Codec<E> codec2) { throw new IllegalStateException("Mixin failed to shadow put1()"); }
     @Shadow private static <E> void put(ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> codecHolder, RegistryKey<? extends Registry<E>> registryKey, Codec<E> codec) { throw new IllegalStateException("Mixin failed to shadow put2()"); }
-    @Shadow private static <R extends Registry<?>> void getWorldGenRegistry(DynamicRegistries.Impl dynamicRegistries, RegistryKey<R> key) { throw new IllegalStateException("Mixin failed to shadow getWorldGenRegistry()"); };
+    // @Shadow private static <R extends Registry<?>> void getWorldGenRegistry(DynamicRegistries.Impl dynamicRegistries, RegistryKey<R> key) { throw new IllegalStateException("Mixin failed to shadow getWorldGenRegistry()"); };
 
-    @Shadow private static final Map<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> registryCodecMap = Util.make(() -> {
+    @Shadow private static final Map<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> REGISTRIES = Util.make(() -> {
         ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> builder = ImmutableMap.builder();
-        put(builder, Registry.DIMENSION_TYPE_KEY, DimensionType.CODEC, DimensionType.CODEC);
-        put(builder, Registry.BIOME_KEY, Biome.CODEC, Biome.PACKET_CODEC);
-        put(builder, Registry.CONFIGURED_SURFACE_BUILDER_KEY, ConfiguredSurfaceBuilder.field_237168_a_);
-        put(builder, Registry.CONFIGURED_CARVER_KEY, ConfiguredCarver.field_236235_a_);
-        put(builder, Registry.CONFIGURED_FEATURE_KEY, ConfiguredFeature.field_242763_a);
-        put(builder, Registry.CONFIGURED_STRUCTURE_FEATURE_KEY, StructureFeature.field_236267_a_);
-        put(builder, Registry.STRUCTURE_PROCESSOR_LIST_KEY, IStructureProcessorType.field_242921_l);
-        put(builder, Registry.JIGSAW_POOL_KEY, JigsawPattern.field_236852_a_);
-        put(builder, Registry.NOISE_SETTINGS_KEY, DimensionSettings.field_236097_a_);
+        put(builder, Registry.DIMENSION_TYPE_REGISTRY, DimensionType.DIRECT_CODEC, DimensionType.DIRECT_CODEC);
+        put(builder, Registry.BIOME_REGISTRY, Biome.DIRECT_CODEC, Biome.NETWORK_CODEC);
+        put(builder, Registry.CONFIGURED_SURFACE_BUILDER_REGISTRY, ConfiguredSurfaceBuilder.DIRECT_CODEC);
+        put(builder, Registry.CONFIGURED_CARVER_REGISTRY, ConfiguredCarver.DIRECT_CODEC);
+        put(builder, Registry.CONFIGURED_FEATURE_REGISTRY, ConfiguredFeature.DIRECT_CODEC);
+        put(builder, Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY, StructureFeature.DIRECT_CODEC);
+        put(builder, Registry.PROCESSOR_LIST_REGISTRY, IStructureProcessorType.DIRECT_CODEC);
+        put(builder, Registry.TEMPLATE_POOL_REGISTRY, JigsawPattern.DIRECT_CODEC);
+        put(builder, Registry.NOISE_GENERATOR_SETTINGS_REGISTRY, DimensionSettings.DIRECT_CODEC);
         return builder.build();
     });
 
-    @Shadow private static final DynamicRegistries.Impl registries = Util.make(() -> {
+    @Shadow private static final DynamicRegistries.Impl BUILTIN = Util.make(() -> {
         DynamicRegistries.Impl dynamicregistries$impl = new DynamicRegistries.Impl();
-        DimensionType.registerTypes(dynamicregistries$impl);
-        registryCodecMap.keySet().stream().filter((registryKey) -> !registryKey.equals(Registry.DIMENSION_TYPE_KEY)).forEach((registerKey) -> {
-            getWorldGenRegistry(dynamicregistries$impl, registerKey);
+        DimensionType.registerBuiltin(dynamicregistries$impl);
+        REGISTRIES.keySet().stream().filter((p_243616_0_) -> {
+            return !p_243616_0_.equals(Registry.DIMENSION_TYPE_REGISTRY);
+        }).forEach((p_243611_1_) -> {
+            copyBuiltin(dynamicregistries$impl, p_243611_1_);
         });
         return dynamicregistries$impl;
     });
+
+    @Shadow private static <R extends Registry<?>> void copyBuiltin(DynamicRegistries.Impl p_243609_0_, RegistryKey<R> p_243609_1_) {
+        Registry<R> registry = (Registry<R>)WorldGenRegistries.REGISTRY;
+        Registry<?> registry1 = registry.get(p_243609_1_);
+        if (registry1 == null) {
+            throw new IllegalStateException("Missing builtin registry: " + p_243609_1_);
+        } else {
+            copy(p_243609_0_, registry1);
+        }
+    }
+
+    @Shadow    private static <E> void copy(DynamicRegistries.Impl p_243606_0_, Registry<E> p_243606_1_) {
+        MutableRegistry<E> mutableregistry = p_243606_0_.<E>registry(p_243606_1_.key()).orElseThrow(() -> {
+            return new IllegalStateException("Missing registry: " + p_243606_1_.key());
+        });
+
+        for(Map.Entry<RegistryKey<E>, E> entry : p_243606_1_.entrySet()) {
+            E e = entry.getValue();
+            mutableregistry.registerMapping(p_243606_1_.getId(e), entry.getKey(), e, p_243606_1_.lifecycle(e));
+        }
+    }
 }
