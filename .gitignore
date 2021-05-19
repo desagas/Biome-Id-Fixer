@@ -1,0 +1,65 @@
+# Package and Jar Files
+*.jar
+*.war
+*.ear
+*.class
+
+# My own preferences for avoiding clutter and spoilers
+changelog.txt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# Eclipse stuff
+/eclipse
+/.classpath
+/.project
+/.settings
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# netbeans
+/nbproject
+
+#gradle stuff
+/gradlew
+/gradlew.bat
+/gradle
+/.gradle
+gradle.attributes
+gradle.properties
+
+# maven
+/build.xml
+/target
+
+# vim
+.*.sw[a-p]
+
+# various other potential build files
+/build
+/bin
+/dist
+/manifest.mf
+/run
+/libs
+/classes
+/out
+/logs
+
+# Mac filesystem dust
+*.DS_Store
+
+# For good measure...
+*.jks
+
+# Do not commit generated resources
+/src/generated/
+/src/test/

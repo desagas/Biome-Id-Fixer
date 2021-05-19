@@ -1,0 +1,12 @@
+{
+    "required": true,
+    "package": "com.desagas.biomeidfixer.mixin",
+    "compatibilityLevel": "JAVA_8",
+    "refmap": "biomeidfixer.refmap.json",
+    "mixins": [
+        "MixinSimpleRegistry",
+        "MixinDynamicRegistries",
+        "MixinWorldSelectionList"
+    ],
+    "minVersion": "0.8"
+}
