@@ -16,7 +16,7 @@ apply plugin: 'idea'
 apply plugin: 'maven-publish'
 apply plugin: 'org.spongepowered.mixin'
 
-version = '1.16.5-1.0.1.s2'
+version = '1.16.5-1.0.1.s3'
 group = 'com.desagas.biomeidfixer' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'biomeidfixer'
 
@@ -127,7 +127,7 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft 'net.minecraftforge:forge:1.16.5-36.1.23'
+    minecraft 'net.minecraftforge:forge:1.16.5-36.1.16'
     annotationProcessor 'org.spongepowered:mixin:0.8.2:processor'
     // You may put jars on which you depend on in ./libs or you may define them like so..
     // compile "some.group:artifact:version:classifier"
