@@ -24,16 +24,16 @@ public final class MixinSimpleRegistry<T> {
     public <V extends T> void validateAndRegisterStart(OptionalInt index, RegistryKey<T> registryKey, V value, Lifecycle lifecycle, CallbackInfoReturnable<V> callback) {
         Validate.notNull(registryKey);
 
-        // Variables added by Desagas
+        // BiomeIdFixer starts here.
+
         // org.apache.logging.log4j.LogManager.getLogger().debug("Desagas: SimpleEntry - " + registryKey.getRegistryName().getPath().toString());
         boolean biomePath = registryKey.getRegistryName().getPath().equals("worldgen/biome");
         com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write();
 
-        // Injecting an id when it is a biome, nothing else.
+        // Injecting an id when Registry is a biome.
         if (biomePath) {
-            index = OptionalInt.of(thisBiomeId.getOrTryBiomeAssignment(index.isPresent() ? index.getAsInt() : this.nextId, registryKey.location().toString())); // Desagas: use index if available, if not it will find the next int.
+            index = OptionalInt.of(thisBiomeId.getOrTryBiomeAssignment(index.isPresent() ? index.getAsInt() : this.nextId, registryKey.location().toString(), "Simple")); // Desagas: use index if available, if not it will find the next int.
         }
-        // No other changes.
     }
 
     @Shadow private int nextId;

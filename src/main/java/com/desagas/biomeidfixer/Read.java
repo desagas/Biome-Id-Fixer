@@ -15,11 +15,12 @@ public class Read extends Write {
 
     // Get JSON file and read it.
     protected void importBiomeMap(boolean isTemp) {
+        StringBuilder bmFB = new StringBuilder().append("Desagas: ");
         String fileToRead = isTemp ? tempMasterFile : pathToMaster;
         try { thisJsonFile = Files.readAllLines(Paths.get(fileToRead));
-            LOGGER.debug("Desagas: read master biomemap at '" + fileToRead);
+            bmFB.append("current master biomemap '").append(fileToRead).append("'");
         } catch (IOException e) {
-            LOGGER.error("Desagas: could not read master biomemap at " + fileToRead);
+            bmFB.append("could not read master biomemap '").append(fileToRead).append("'.");
             e.printStackTrace(); }
 
         for (String jsonLine : thisJsonFile) {
@@ -37,27 +38,27 @@ public class Read extends Write {
             biomes.put(thisBiomeId, thisBiomeLocation);
         }
 
-        LOGGER.debug("Desagas: found this master biomemap: " + biomes);
+        bmFB.append(" contains: ").append(biomes);
+        LOGGER.info(bmFB);
     }
 
     // Reads either server.properties or the temp file created in Write to get world folder name, before registries happen.
     protected String getServerWorldFolder (String fileName) {
-        if (!new File(String.valueOf(fileName)).exists()) {
-            LOGGER.debug("Desagas: tempoaray config file '" + fileName + "' does not exist.");
-            return "isTemp";
-        } else {
-            try { thisPropertiesFile = Files.readAllLines(Paths.get(fileName));
-                LOGGER.debug("Desagas: found '" + fileName + "'");
-            } catch (IOException e) {
-                LOGGER.error("Desagas: could not find '" + fileName + "'");
+        String worldFolder = "isTemp";
+
+        if (new File(String.valueOf(fileName)).exists()) {
+            try { thisPropertiesFile = Files.readAllLines(Paths.get(fileName)); }
+            catch (IOException e) {
+                LOGGER.error("Desagas: could not read config file '" + fileName + "'.");
                 e.printStackTrace(); }
 
             for (String serverPropertyLine : thisPropertiesFile) {
                 if (serverPropertyLine.contains("level-name=")) {
-                    return serverPropertyLine.split("=")[1];
+                    worldFolder = serverPropertyLine.split("=")[1];
                 }
             }
-            return "isTemp";
         }
+
+        return worldFolder;
     }
 }

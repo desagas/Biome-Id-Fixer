@@ -1,9 +1,8 @@
 package com.desagas.biomeidfixer;
 
 import com.google.gson.*;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+
+import java.io.*;
 import java.util.*;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
@@ -14,23 +13,33 @@ public class Write {
 
     protected static final Logger LOGGER = LogManager.getLogger();
 
+    protected static boolean isTemp;
+
     protected int biomeId;
+
+    protected static final Map<Integer, String> biomes = new HashMap<Integer, String>();
+
+    protected String regType;
     protected String biomeLocation;
     protected static String pathToMaster;
+    private static final String sep = File.separator;
     protected static final String tempFileName = "biomeidfixer.temp";
     protected static final String masterFileName = "BiomeIdFixer.json";
-    protected static final String tempMasterFile = "NewWorld" + masterFileName;
     protected static final String serverProperties = "server.properties";
-    protected static final Map<Integer, String> biomes = new HashMap<Integer, String>();
-    protected static String sep = "/";
+    protected static final String tempMasterFile = "NewWorld" + masterFileName;
 
-    public int getOrTryBiomeAssignment(int biomeId, String biomeLocation) {
+    protected static StringBuilder idFB; // Feedback for Biome Id Assignments
+    protected static StringBuilder flFB; // Feedback for File Management
+
+    public int getOrTryBiomeAssignment(int biomeId, String biomeLocation, String regType) {
 
         this.biomeId = biomeId;
+        this.regType = regType;
         this.biomeLocation = biomeLocation;
 
-        if (buildPathToMaster(new Read().getServerWorldFolder(isServer() ? serverProperties : tempFileName))) {
+        flFB = new StringBuilder();
 
+        if (buildPathToMaster(new Read().getServerWorldFolder(isServer() ? serverProperties : tempFileName))) {
             if (masterExists()) {
                 if (biomes.isEmpty()) {
                     new Read().importBiomeMap(false);
@@ -39,40 +48,37 @@ public class Write {
                 return -1;
             }
 
-            StringBuilder feedback = new StringBuilder();
+            int returnId = -1; // Fail-Safe, Prevents an NPE.
 
-            int returnId = -1;
+            idFB = new StringBuilder()
+                    .append("Desagas: id ").append(this.biomeId)
+                    .append(" for ").append("'").append(this.biomeLocation).append("'");
 
             switch (canAssignIdtoBiome()) {
                 case 0: // Already assigned;
                     returnId = this.biomeId;
-                    feedback.append("Desagas: trying to assign biomeId ").append(this.biomeId).append(" to ").append(this.biomeLocation);
-                    feedback.append(" - id already assigned to biome.");
-                    LOGGER.debug(feedback);
+                    idFB.append(" was already assigned;");
                     break;
                 case 1: // Not assigned;
                     returnId = assignId();
-                    feedback.append("Desagas: trying to assign biomeId ").append(this.biomeId).append(" to ").append(this.biomeLocation);
-                    feedback.append(" - id now assigned to biome.");
-                    LOGGER.info(feedback);
+                    idFB.append(" is now assigned;");
                     break;
                 case 2: // Biome assigned, not to the id;
                     returnId = findId();
-                    feedback.append("Desagas: trying to assign biomeId ").append(this.biomeId).append(" to ").append(this.biomeLocation);
-                    feedback.append(" - not assigned: biome already assigned; previously assigned id ").append(returnId).append(" used instead.");
-                    LOGGER.info(feedback);
+                    idFB.append(" was not assigned; previously assigned id ").append(returnId).append(" used instead;");
                     break;
                 case 3: // Id assigned, not to the biome;
-                    returnId = getOrTryBiomeAssignment(this.biomeId + 1, this.biomeLocation);
-                    feedback.append("Desagas: trying to assign biomeId ").append(this.biomeId).append(" to ").append(this.biomeLocation);
-                    feedback.append(" - not assigned: id already assigned; previously assigned id ").append(returnId).append(" used instead");
-                    LOGGER.info(feedback);
+                    returnId = getOrTryBiomeAssignment(this.biomeId + 1, this.biomeLocation, this.regType);
+                    idFB.append(" was not assigned; previously assigned id ").append(returnId).append(" used instead;");
                     break;
                 default:
                     throw new IllegalStateException("Desagas: unexpected canAssignIdtoBiome() logic value assigned: " + canAssignIdtoBiome());
             }
 
-            writeJson(getPrettyJsonString());
+            if (flFB.length() != 0) { LOGGER.debug(flFB); }
+
+            idFB.append(" ").append(writeJson(getPrettyJsonString()));
+            LOGGER.debug(idFB);
 
             return returnId;
         }
@@ -82,18 +88,18 @@ public class Write {
 
     // If folder does not exist in world directory, create it.
     private boolean buildPathToMaster(String worldFolder) {
-        if (!worldFolder.equals("isTemp")) {
-            File masterFolder = new File(worldFolder + File.separator + BiomeIdFixer.MOD_ID);
+        if (worldFolder.equals("isTemp")) {
+            isTemp = true;
+            pathToMaster = tempMasterFile;
+            return true;
+        } else {
+            File masterFolder = new File(worldFolder + sep + BiomeIdFixer.MOD_ID);
             if (isOrCreateFolder(masterFolder)) {
-                pathToMaster = masterFolder + File.separator + masterFileName;
+                pathToMaster = masterFolder + sep + masterFileName;
                 return true;
             } else {
                 return false;
             }
-        } else {
-            pathToMaster = tempMasterFile;
-            LOGGER.debug("Desagas: using temporary master biomemap at '" + pathToMaster + "'");
-            return true;
         }
     }
 
@@ -110,18 +116,23 @@ public class Write {
         return this.biomeId;
     }
 
+    // TODO - Clean Up this Bit
     private int findId() {
+        StringBuilder mpFB = new StringBuilder().append("Desagas: checking biome '").append(this.biomeLocation).append("' against id: ");
         Iterator huntId = biomes.entrySet().iterator();
         while (huntId.hasNext()) {
             Map.Entry pair = (Map.Entry) huntId.next();
-            LOGGER.debug("Desagas: checked " + this.biomeLocation + " against " + pair.getValue());
+            mpFB.append(pair.getValue());
             if (pair.getValue().equals(this.biomeLocation)) {
-                LOGGER.debug("       : found a match!");
+                mpFB.append(" - match found!");
                 return (int) pair.getKey();
+            } else {
+                mpFB.append(", ");
             }
+            LOGGER.debug(mpFB);
         }
 
-        return -1;
+        return -1; // Fail-Safe, Prevents an NPE.
     }
 
     private String getPrettyJsonString() {
@@ -129,7 +140,7 @@ public class Write {
         JsonParser parseJson = new JsonParser();
         Gson betterGson = new GsonBuilder().setPrettyPrinting().create();
 
-        // Map is loaded in order OUTSIDE of the dev environment, but random within.
+        // All Maps loaded in order OUTSIDE of the dev environment, but SimpleRegistries loaded randomly within.
         String uglyJson = uglyGson.toJson(biomes);
         JsonElement parsedJson = parseJson.parse(uglyJson);
 
@@ -138,18 +149,21 @@ public class Write {
 
     private boolean masterExists() {
         File f = new File(String.valueOf(pathToMaster));
-        LOGGER.debug("Desagas: master biomemap exists at '" + pathToMaster + "'");
+
+        if (!f.exists()) {
+            flFB.append("Desagas: ").append(isTemp ? "temporary " : "").append("master biomemap '").append(pathToMaster).append("'").append(" does not exist, ");
+        }
         return f.exists();
     }
 
     private boolean createMaster() {
         try {
             FileWriter master = new FileWriter(pathToMaster);
-            LOGGER.info("Desagas: created master biomemap at '" + pathToMaster + "'");
+            flFB.append("but was created.");
             return true;
         } catch (IOException e) {
             e.printStackTrace();
-            LOGGER.error("Desagas: could not create master biomemap.");
+            flFB.append("but could not be created.");
             return false;
         }
     }
@@ -168,28 +182,28 @@ public class Write {
                                 !b ? 3 : 9; // Biome not assigned but key is assigned; !!! <-- Do last.
     }
 
-    private void writeJson(String prettyString) {
+    private String writeJson(String prettyString) {
         try {
             FileWriter jsonWriter = new FileWriter(pathToMaster);
             jsonWriter.write(prettyString);
             jsonWriter.flush();
-            LOGGER.debug("Desagas: updated master biomemap.");
+            return regType + "Registry updated '" + pathToMaster + "'.";
         } catch (IOException e) {
-            LOGGER.error("Desagas: could not update master biomemap.");
             e.printStackTrace();
+            return regType + "Registry could not update '" + pathToMaster + "'.";
         }
     }
 
-    // Obtain logo file for world selected, to extrapolate world save folder and save to file for calling from Write, before Integrated or Server loaded.
-    public void writeTemp(String worldFolder, boolean clear) {
+    // Obtain logo file parent folder for existing world, and save to file for calling from Write, before Server is loaded.
+    public void writeTemp(String worldFolder) {
         biomes.clear();
 
         String thisPath = "level-name=" + worldFolder;
-        LOGGER.debug(!clear ? "Desagas: added '" + thisPath + "' to temporary config file ." : "Desagas: removed '" + thisPath + "' from temporary config file.");
+        LOGGER.info("Desagas: added '" + thisPath + "' to the temporary config file.");
 
         try {
             FileWriter tempWriter = new FileWriter(tempFileName);
-            tempWriter.write(!clear ? thisPath : "");
+            tempWriter.write(thisPath);
             tempWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -204,18 +218,18 @@ public class Write {
                         new Read().importBiomeMap(true);
                         writeJson(getPrettyJsonString());
                     } else {
-                        LOGGER.error("Desagas: cannot access biomemap file in world folder for transfering master biomemap.");
+                        LOGGER.error("Desagas: cannot create '" + pathToMaster + "' for transfering '" + tempMasterFile + "' into.");
                     }
                 } else {
                     LOGGER.error("Desagas: cannot access world folder.");
                 }
             }
-            LOGGER.info(removeTemp(tempMasterFile) ? "Desagas: removed temporary biomemap file after transfering it to world folder." : "Desagas: could not remove temporary biomemap file.");
+            LOGGER.info(removeTemp(tempMasterFile) ? "Desagas: successfully removed '" + tempMasterFile + "' after transferring to '" + pathToMaster + "'." : "Desagas: could not remove '" + tempMasterFile + "' after transfering to '" + pathToMaster + "'.");
         }
     }
 
     protected void stopServer () {
-        LOGGER.info(removeTemp(tempFileName) ? "Desagas: removed temporary config file after transfering temporary biomemap file to world folder." : "Desagas: could not remove temporary config file.");
+        LOGGER.info(removeTemp(tempFileName) ? "Desagas: successfully removed '" + tempFileName + "' while stopping server." : "Desagas: could not remove '" + tempFileName + "' while stopping server.");
     }
 
     private boolean removeTemp (String thisFiletoDelete) { return new File(String.valueOf(thisFiletoDelete)).delete(); }

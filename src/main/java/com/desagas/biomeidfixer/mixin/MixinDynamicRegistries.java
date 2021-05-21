@@ -15,6 +15,7 @@ import net.minecraft.world.gen.feature.StructureFeature;
 import net.minecraft.world.gen.feature.jigsaw.JigsawPattern;
 import net.minecraft.world.gen.feature.template.IStructureProcessorType;
 import net.minecraft.world.gen.surfacebuilders.ConfiguredSurfaceBuilder;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,32 +40,25 @@ public abstract class MixinDynamicRegistries {
         for(Map.Entry<RegistryKey<E>, E> entry : registry.entrySet()) {
             E e = entry.getValue();
 
-            // My changes start here. Very small.
-            // Desagas added: if is biome registry below this line, add link to my path for id.
+            // BiomeIdFixer starts here. Marked with // ADDED and // MODIFI
 
             // org.apache.logging.log4j.LogManager.getLogger().debug("Desagas: DynamicEntry - " + entry.getKey().getRegistryName().getPath().toString());
-            boolean isBiomeReg = entry.getKey().getRegistryName().getPath().equals("worldgen/biome"); // ADD
-
-            com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write(); // ADD
+            boolean isBiomeReg = entry.getKey().getRegistryName().getPath().equals("worldgen/biome"); // ADDED
+            com.desagas.biomeidfixer.Write thisBiomeId = new com.desagas.biomeidfixer.Write(); // ADDED
 
             if (flag) {
-                if (isBiomeReg) { // ADD
-                    p_243607_1_.add(BUILTIN, entry.getKey(), p_243607_2_.codec(), thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().location().toString()), e, registry.lifecycle(e));
-                    // MODIFIED
+                if (isBiomeReg) { // ADDED
+                    p_243607_1_.add(BUILTIN, entry.getKey(), p_243607_2_.codec(), thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().location().toString(), "Dynamic"), e, registry.lifecycle(e)); // MODIFIED
                 } else {
                     p_243607_1_.add(BUILTIN, entry.getKey(), p_243607_2_.codec(), registry.getId(e), e, registry.lifecycle(e));
                 }
             } else {
-                if (isBiomeReg) { // ADD
-                    mutableregistry.registerMapping(thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().location().toString()), entry.getKey(), e, registry.lifecycle(e));
-                    // MODIFIED
+                if (isBiomeReg) { // ADDED
+                    mutableregistry.registerMapping(thisBiomeId.getOrTryBiomeAssignment(registry.getId(e), entry.getKey().location().toString(), "Dynamic"), entry.getKey(), e, registry.lifecycle(e)); // MODIFIED
                 } else {
                     mutableregistry.registerMapping(registry.getId(e), entry.getKey(), e, registry.lifecycle(e));
                 }
             }
-            //
-            // Everything else is as is.
-            //
         }
 
         callback.cancel();
@@ -72,9 +66,8 @@ public abstract class MixinDynamicRegistries {
 
     @Shadow private static <E> void put(ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> codecHolder, RegistryKey<? extends Registry<E>> registryKey, Codec<E> codec, Codec<E> codec2) { throw new IllegalStateException("Mixin failed to shadow put1()"); }
     @Shadow private static <E> void put(ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> codecHolder, RegistryKey<? extends Registry<E>> registryKey, Codec<E> codec) { throw new IllegalStateException("Mixin failed to shadow put2()"); }
-    // @Shadow private static <R extends Registry<?>> void getWorldGenRegistry(DynamicRegistries.Impl dynamicRegistries, RegistryKey<R> key) { throw new IllegalStateException("Mixin failed to shadow getWorldGenRegistry()"); };
 
-    @Shadow private static final Map<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> REGISTRIES = Util.make(() -> {
+    @Final @Shadow private static final Map<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> REGISTRIES = Util.make(() -> {
         ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, DynamicRegistries.CodecHolder<?>> builder = ImmutableMap.builder();
         put(builder, Registry.DIMENSION_TYPE_REGISTRY, DimensionType.DIRECT_CODEC, DimensionType.DIRECT_CODEC);
         put(builder, Registry.BIOME_REGISTRY, Biome.DIRECT_CODEC, Biome.NETWORK_CODEC);
@@ -88,7 +81,7 @@ public abstract class MixinDynamicRegistries {
         return builder.build();
     });
 
-    @Shadow private static final DynamicRegistries.Impl BUILTIN = Util.make(() -> {
+    @Final @Shadow private static final DynamicRegistries.Impl BUILTIN = Util.make(() -> {
         DynamicRegistries.Impl dynamicregistries$impl = new DynamicRegistries.Impl();
         DimensionType.registerBuiltin(dynamicregistries$impl);
         REGISTRIES.keySet().stream().filter((p_243616_0_) -> {

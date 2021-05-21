@@ -28,7 +28,7 @@ public class BiomeIdFixer {
         LOGGER.info("Desagas: started 'FMLServerStartingEvent' processes.");
         if (event.getServer().isSingleplayer()) {
             String thisString = event.getServer().getWorldScreenshotFile().getParent();
-            new Write().writeTemp(thisString, false);
+            new Write().writeTemp(thisString);
         }
         LOGGER.info("Desagas: ended 'FMLServerStartingEvent' processes.");
     }
@@ -37,18 +37,10 @@ public class BiomeIdFixer {
     public void onServerStarted(FMLServerStartedEvent event) {
         LOGGER.info("Desagas: started 'FMLServerStartedEvent' processes.");
         new Write().transferTemp(false); // Transfer and remove temporary new biome map.
-        LOGGER.info("Desagas: ended 'FMLServerStartedEvent' processes.");
-    }
-
-    @SubscribeEvent // Create master mapping file for new server worlds.
-    public void onClientJoinWorld(EntityJoinWorldEvent event) {
-        if (!event.getWorld().isClientSide) { // If not called, servers call error for next line.
-            if (event.getEntity().getClass() == PlayerEntity.class) { // Only client entity, as we only care about if we made it into the world.
-                LOGGER.info("Desagas: started 'EntityJoinWorldEvent' processes.");
-                new Write().transferTemp(true); // Do not update or create anything, simply delete the temp master list created, as it does nothing, but can inject when loading another world.
-                LOGGER.info("Desagas: ended 'EntityJoinWorldEvent' processes.");
-            }
+        if (!event.getServer().isSingleplayer()) {
+            new Write().transferTemp(true); // Transfer and remove temporary new biome map.
         }
+        LOGGER.info("Desagas: ended 'FMLServerStartedEvent' processes.");
     }
 
     @SubscribeEvent // Clear loaded mapping file for next map loaded.
