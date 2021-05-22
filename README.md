@@ -1,58 +1,71 @@
-# About Biome Id Fixer by Desagas
+# About BiomeIdFixer
 
-###### [See the Wiki for all useful information](https://github.com/desagas/Biome-Id-Fixer/wiki/).
+###### [See the Wiki for most useful information](https://github.com/desagas/Biome-Id-Fixer/wiki/).
 
-Biome Id Fixer assigns the biome ids to a master id list, and calls from that list when minecraft needs to access the biome ids, for things like new generation, loading biome info for current generation, for sending to clients from servers, etc. It does not change the ids that are initially registered, only subsequent biome additions.
-
-### Biome Ids are now world specific, and do not require you to restart the pack to adjust them, only the world..
-
-*   This was made with Forge 1.16.4.35.1.29, and works tested up to 1.16.5.36.0.1.
-*   I have tested it with ATM6, 1.3.7 through 1.4.1, and it works fine, with ALL mods installed.
-*   I have tested it on both dedicated Servers and single player Clients. 
-*   I have now tested on Mac and Windows.
-*   Works with AE2 biomes, [Rats: Ratlantis](https://www.curseforge.com/minecraft/mc-mods/rats-ratlantis) biomes, [Oh the Biomes You Go (BYG)](https://www.curseforge.com/minecraft/mc-mods/oh-the-biomes-youll-go) biomes, [Biomes o'Plenty (BoP)](https://www.curseforge.com/minecraft/mc-mods/biomes-o-plenty) biomes, [Mahou Tsukai](https://www.curseforge.com/minecraft/mc-mods/mahou-tsukai) biomes, and Vanilla Minecraft biomes.
-    
-* ###### This does not prevent sharp biome edges from happening around new chunks. When you add biomes, there is only so much space to occupy, so Minecraft/Forge distribute biomes based on weight, which means that where one biome was, another one may exist when updateing. Same when removing biomes.
-
-    
-### Because of the way Biome Id Fixer works, you can transfer your Master BiomeIdFixer JSON to your Pack players, your Server Players, and your friend, if they lose theirs.
-*   If you accidently delete your BiomeIdFix JSON, you could copy in one from somewhere else, or you can quite easily name a new one. [See the Wiki for all useful information, including restoring your biomeidfixer JSON.](https://github.com/desagas/Biome-Id-Fixer/wiki/)
-*   Should your pack or mod update add amazing new biomes, or should it remove them, Biome Id Fixer has already mapped them by the time the world loads, which means that ALL biome ids will NOT change, only new ones will be added, even if you remove mods with biomes.
-*   If you decide to add back missing biomes at a later date, Minecraft/Forge will continue using the exact same biome map that was used before, provide no additional mods have been added. The re-added biomes will also use the same id that they used before.
-
-## _Chocolate Anyone ??_
+BiomeIdFixer intercepts Minecraft's and Forge's biome registration processes, records the assigned ids, and then denies Minecraft the ability to change them if new biomes are added or current ones are removed. Minecraft then uses the recorded biome ids identically to how it would have without this mod installed.
 
 
-Unlike other wonderfully tasty, delightful and sweet Chocolatety mods ;) that exist currently, Biome Id Fixer does not require that you visit every chunk you want to preserve existing biome data in, you need to only load the previous version's world **_once_**, in any biome, in any dimension, for a brief moment for the world to actually load, to save/preserve the BiomeIdFixer map of biomes.
+## Adventure Mode Creators
+For adventure and story mode style mapmakers: cut away scenes are the best, as long as they are not too long: *Final Fantasy III, USA,* when the air strike destroyed the land; *Zelda, OoT* where ash is floating down or horrible enemies now exist around the Temple of Time; *Zelda, BoTW,* around the castle and up the mountain turn dark as Ganondorf grows stronger, well ... imagine a script that kicks your players momentarily, loads another biomeidfixer.json map of biome ids, and then reloads your world, [where the once peaceful plains are now filled with Ghasts (click to see video showing this)](https://www.youtube.com/watch?v=O8qa0LHJYKA&ab_channel=DenverWilliamDenverWilliam) and Wither skeletons (not spawning due to light levels) ... you can do that. Remember, this affects **ALL** existing chunks, which is perfect, because these worlds are usually man made.
 
-**HOWEVER,** I **_ recommend_** having [Chocolate Fix](https://www.curseforge.com/minecraft/mc-mods/chocolate-fix) installed as a precautionary step in reducing the minimal amount of effort it takes restoring after accidentally deleting your BiomeIdFixer JSON. Plus, two baskets for the same chocolate egg is better than one.
 
-## Jargon
-*   When biomes are removed, their associated ids will **NEVER** be used again, unless the mod containing the biomes is reinstalled, at which point the biomes will naturally take up those ids again.
-*   When a mod changes the **_registry location_** (minecraft:plains) name of a biome, it will lose its assigned id, and be reassigned a new one. Forge/minecraft will choose how the previously generated biome in the world will act (temperature, weather, ambiance, etc).
-*   Biome Id Fixer does not regenerate chunks that have already been loaded.
+## Everyone Else
+
+### Biome Ids are world specific, and changes only require worlds to be restarted, not your Minecraft instance.
+
+*   Made with Forge 1.16.4.35.1.29, and works tested up to 1.16.5.36.1.23.
+*   Works with ATM6 1.3.7 through 1.6.2, Create Together, and Enigmatica 6, and many more packs.
+*   Tested on both dedicated **servers** and single player **clients**. 
+*   Personally tested on Windows and macOS (May 21, 2021), and others confirm Linux.
+*   Works with all Vanilla biomes, as well as those from [Applied Energistic 2](https://www.curseforge.com/minecraft/mc-mods/applied-energistics-2), [Rats: Ratlantis](https://www.curseforge.com/minecraft/mc-mods/rats-ratlantis), [Oh the Biomes You Go (BYG)](https://www.curseforge.com/minecraft/mc-mods/oh-the-biomes-youll-go), [Biomes o'Plenty (BoP)](https://www.curseforge.com/minecraft/mc-mods/biomes-o-plenty), [Mahou Tsukai](https://www.curseforge.com/minecraft/mc-mods/mahou-tsukai), [The Endergetic Expansion](https://www.curseforge.com/minecraft/mc-mods/endergetic), [The Twilight Forest](https://www.curseforge.com/minecraft/mc-mods/the-twilight-forest), and many more.
+
+
+### You can transfer your master biomeidfixer.json file to your pack players, your server players, and your friends, if they lose theirs, or you simply want to share.
+*   If you add a biome, BiomeIdFixer adds the new biome id to the master list.
+*   If you remove a biome, nothing happens. Its id is forever locked to that biome, whether still in your modpack or not, so, it can **never** be overwritten by Minecraft. 
+*   So, even if you accidentally delete your master biomemap file, you could copy one from someone or somewhere else, or you can quite easily let Minecraft generate a new one. [See the Wiki for more useful information, including restoring your biomeidfixer.json file.](https://github.com/desagas/Biome-Id-Fixer/wiki/).
+*   **Warning!**: if you did not start your pack on the same version as someone else, and update through the versions in the exact same order as they have, your biome ids may not have been assigned identically, so, you do run the risk of ids still not being 100% correct. In other words, **always back up your world folders!!**
+*   If, however, you started on the same pack version, and updated to the same versions, time and time again, your biomemaps will be identical, and you should be able to transfer them from one person/world to another.
+
+
+## Jargon, In the Know
+*   If you remove a biome and decide to add it back at a later time, Minecraft and Forge will continue using the exact same biome map that was used before you removed it, provide no additional biomes have been added, and their weights have not changed. These re-added biomes will continue to use the exact same id that they used before. *This is great for accidental mod deletions or config changes.*
+*   If a mod changes a **_biome's name_**, the biome will lose its assigned id and be assigned a new one for its new name. Minecraft will then choose how to handle the previously generated biome, including temperature, weather, ambiance, mobs, etc. This is unavoidable, unpreventable, and without reverting the name back, unfixable.
+*   BiomeIdFixer does not regenerate chunks that have already been generated, it makes sure that biomes that have already been assigned remain the biome they were initially generated as, as long as that biome still exists in the game.
+
+
+### Warning, Sharp Edges
+
+*   This does not prevent sharp biome edges from separating old and new chunks. Minecraft generates a noise map that is specific to your world seed, and biomes are assigned to that map, filling it complete. When you add a biome, the remaining uncliamed map space will be distributed amoungst more biomes, so it is very likely that these will occur.
+
 
 ### Where to Do ...:
 
-*   [Download this Mod from Curse here](https://www.curseforge.com/minecraft/mc-mods/biome-id-fixer), or on the launcher.
+*   [Download this Mod from Curse, here](https://www.curseforge.com/minecraft/mc-mods/biome-id-fixer), or on the Twitch, Curse, or Overwolf launcher.
 *   [The github is here](https://github.com/desagas/Biome-Id-Fixer).
-*   [Learn more about using this mod?]()
+*   [Learn more about using this mod!]()
+
 
 ### Known Bugs:
 
-*  Endergetic seems to be registering its biome at different times on Servers and Clients. If you are using this mod, please copy the BiomeIdFixer(doNOTedit).json from your server to your client. This will fix the issue.
+*   The Endergetic Expansion seems to be registering its biome at different times on Servers and Clients. If you are using this mod, please copy the *WorldName/biomeidfixer/biomeidfixer.json* file from your server to your client. This should fix the issue.
+*   If the file *server.properties* on a server instnace, or *biomeidfixer.temp* on a singleplayer instance are removed while the world is loading or being created, the entire map will be replaced with whatever new map has been registered by Minecraft or Forge. This will be classed as user error, and, for the most part, can not be fixed. I do not plan on implementing a backup solution. This file can not be moved into your world folder, because of the way Minecraft's biome registration works.
+
 
 ### What About ...:
 
-*   having this be **WORLD SPECIFIC**: It will be coming in the next update. Currenly it is pack instance specific. If you have multiple worlds, or play or a Server and SP, make an instance for both.
+*   ... manually turning off individual biomes, preventing them from being registered entirely, within one simple config file for all installed mods? In the future, I may implement this.
+*   ... controlling the other aspects of biomes in the exact same way, changing the sky color, temperature, humidity, mobs that can spawn, etc. In the future, I may implement this.
+*   ... controlling and modifying every little thing that minecraft registers while loading into a world? It can be done, and in the future, I may implement this.
+*   ... overloading currently loaded biome ids, allowing you to change how a biome acts without even having to exit your world? If I have the headspace, and a few hundred hours, it definitely would be possible, but would be super complicated to learn how to code it.
 
 ### Can you ...:
-*   Use it in your Pack?
+*   ... use it in your Pack?
     # &nbsp;&nbsp;&nbsp;&nbsp;YES!
 
 ### In need of recognition:
-*   SkySom, he helped me a lot, when others literally banned me for inquiring.
+*   SkySom, you helped me a lot, when others literally banned me for even inquiring.
 *   HellfirePVP for having a great .gitignore AND build.gradle file to template off of.
 *   MinecraftForge, Minecraft, and IntelliJ for making the documentation and shown code available under their license.
-*   Tslat, you still helped me a lot.
-*   TeamPneumatic for having code that showed me how to save to the world.
+*   Tslat, you helped me a lot.
+*   TeamPneumatic for having code that showed me how to save to the world folder.
