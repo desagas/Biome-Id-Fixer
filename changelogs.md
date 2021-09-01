@@ -11,6 +11,9 @@
        1. For future use, to specify feature or release types.
 </details>
 
+## 1.0.1.s5
+*   Removes around nearly all debug log spam when searching for existing id after shuffling biomes.
+
 ## 1.0.1.s4
 *   Removes around 80% of debug log spam.
 *   Console log now show start and stop for forge events, includig file location and movement.

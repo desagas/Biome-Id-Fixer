@@ -65,11 +65,11 @@ public class Write {
                     break;
                 case 2: // Biome assigned, not to the id;
                     returnId = findId();
-                    idFB.append(" was not assigned; previously assigned id ").append(returnId).append(" used instead;");
+                    idFB.append(" was not assigned (wrong id); previously assigned id ").append(returnId).append(" used instead;");
                     break;
                 case 3: // Id assigned, not to the biome;
                     returnId = getOrTryBiomeAssignment(this.biomeId + 1, this.biomeLocation, this.regType);
-                    idFB.append(" was not assigned; previously assigned id ").append(returnId).append(" used instead;");
+                    idFB.append(" was not assigned (wrong biome); previously assigned id ").append(returnId).append(" used instead;");
                     break;
                 default:
                     throw new IllegalStateException("Desagas: unexpected canAssignIdtoBiome() logic value assigned: " + canAssignIdtoBiome());
@@ -116,20 +116,20 @@ public class Write {
         return this.biomeId;
     }
 
-    // TODO - Clean Up this Bit
+    // TODO - Clean Up this Bit, Temporarily removed logging until more streamlined log created.
     private int findId() {
-        StringBuilder mpFB = new StringBuilder().append("Desagas: checking biome '").append(this.biomeLocation).append("' against id: ");
+        // StringBuilder mpFB = new StringBuilder().append("Desagas: checking biome '").append(this.biomeLocation).append("' against id: ");
         Iterator huntId = biomes.entrySet().iterator();
         while (huntId.hasNext()) {
             Map.Entry pair = (Map.Entry) huntId.next();
-            mpFB.append(pair.getValue());
+            // mpFB.append(pair.getValue());
             if (pair.getValue().equals(this.biomeLocation)) {
-                mpFB.append(" - match found!");
+                // mpFB.append(" - match found!");
                 return (int) pair.getKey();
             } else {
-                mpFB.append(", ");
+                // mpFB.append(", ");
             }
-            LOGGER.debug(mpFB);
+            // LOGGER.debug(mpFB);
         }
 
         return -1; // Fail-Safe, Prevents an NPE.
